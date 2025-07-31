@@ -1,6 +1,6 @@
-# SCV-ANALYSIS-SLICER
+# CSV-ANALYSIS-SLICER
 
-SCV-ANALYSIS-SLICER는 대용량 CSV 파일을 슬라이스 개수 또는 용량(MB) 기준으로 자동 분할하고, 각 조각에 대해 통계 요약(describe)을 생성 및 저장하는 Python 유틸리티입니다.
+CSV-ANALYSIS-SLICER는 대용량 CSV 파일을 슬라이스 개수 또는 용량(MB) 기준으로 자동 분할하고, 각 조각에 대해 통계 요약(describe)을 생성 및 저장하는 Python 유틸리티입니다.
 
 ## 기능
 
@@ -13,7 +13,7 @@ SCV-ANALYSIS-SLICER는 대용량 CSV 파일을 슬라이스 개수 또는 용량
 
 1. 슬라이스 개수 기준 (예: 10개로 분할):
 
-from scv_analysis_slicer import smart_csv_slicer_visual
+from csv_analysis_slicer import smart_csv_slicer_visual
 
 smart_csv_slicer_visual(
     input_path="data.csv",
