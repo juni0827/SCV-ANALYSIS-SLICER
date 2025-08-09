@@ -1,26 +1,43 @@
+# SCV Analysis Slicer
 
-# CSV Analyzer (Modular Refactor)
+Tools for exploring, slicing, and visualizing large CSV files.  The project
+provides both a DearPyGui interface and a command-line entry point.
 
-A refactored, modular DearPyGui application for fast CSV inspection, filtering, and visualization.
+## Features
 
-## Highlights
-- **Modular**: `app.py`, `ui.py`, `data_loader.py`, `analysis.py`, `visualization.py`, `utils.py`
-- **No disk I/O for plots**: In-memory (BytesIO) pipeline to render Matplotlib figures into DearPyGui textures
-- **Extended stats**: median, IQR, skewness, kurtosis, missing%
-- **Pagination**: preview large tables with adjustable page size
-- **Extra plots**: Histogram, Box, Scatter, Line, ECDF
-- **Engine auto-select**: uses **pyarrow** CSV reader if available
+- Modular architecture (`app.py`, `ui.py`, `data_loader.py`, `analysis.py`,
+  `visualization.py`, `utils.py`)
+- In-memory rendering pipeline so Matplotlib figures become DearPyGui textures
+  without temporary files
+- Extended statistics: median, IQR, skewness, kurtosis, and missing percentages
+- Pagination to preview large tables page by page
+- Histogram, box, scatter, line, and ECDF plots
+- Automatically selects the fastest CSV reader (`pyarrow` when available)
+- CLI support via `main_cli.py`
 
-## Install
+## Installation
+
 ```bash
 pip install -r requirements.txt
 ```
 
-## Run
+## Usage
+
+### GUI
+
 ```bash
 python app.py
 ```
 
+### Command line
+
+```bash
+python main_cli.py --help
+```
+
 ## Notes
-- Font loading is **best-effort** across Windows/macOS/Linux. If no font is found, DearPyGui's default is used.
-- For very large CSVs, consider providing explicit `dtype` maps inside `data_loader.load_csv` for optimal memory usage.
+
+- Font loading is best-effort across Windows/macOS/Linux. If no font is
+  found, DearPyGui's default is used.
+- For very large CSVs, consider providing explicit `dtype` maps inside
+  `data_loader.load_csv` for optimal memory usage.
