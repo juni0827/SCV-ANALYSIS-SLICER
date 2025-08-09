@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import Optional, Dict, Any
 from pathlib import Path
+import logging
 import pandas as pd
 
 from utils import AppState
@@ -27,11 +28,12 @@ def load_csv(state: AppState, path: str | Path, dtype_map: Optional[Dict[str, st
         # Fallback to preview mode
         df = pd.read_csv(p, dtype=dtype_map, nrows=100_000, engine=engine)
         state.preview_only = True
-    except Exception as e:
+    except (pd.errors.ParserError, pd.errors.EmptyDataError, UnicodeDecodeError) as err:
         # Heuristic: for very large files, auto-preview
         if state.file_size > 200 * 1024 * 1024 and nrows is None:
             df = pd.read_csv(p, dtype=dtype_map, nrows=100_000, engine=engine)
             state.preview_only = True
+            logging.warning("Failed to read full CSV (%s); loaded preview instead.", err)
         else:
             raise
     state.df = df
