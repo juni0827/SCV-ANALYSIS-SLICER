@@ -16,10 +16,20 @@ token_code_map = {
     # Add more mappings as needed
 }
 
-def dsl_to_code(dsl_sequence):
+def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
+    """Convert a sequence of DSL tokens into executable Python code.
+
+    Parameters
+    ----------
+    dsl_sequence : list[str]
+        Ordered DSL tokens such as ["C1", "C2"].
+    csv_path : str, optional
+        Path to the CSV file that should be read in the generated code.
+        Defaults to "your_file.csv" for backward compatibility.
+    """
     lines = [
         "import pandas as pd",
-        "df = pd.read_csv('your_file.csv')",
+        f"df = pd.read_csv({repr(csv_path)})",
         ""
     ]
     for token in dsl_sequence:
@@ -29,5 +39,5 @@ def dsl_to_code(dsl_sequence):
     return "\n".join(lines)
 
 # Example:
-# dsl = ["C1", "C2", "C6"]
-# print(dsl_to_code(dsl))
+# dsl = ['C1', 'C2', 'C6']
+# print(dsl_to_code(dsl, 'data.csv'))
