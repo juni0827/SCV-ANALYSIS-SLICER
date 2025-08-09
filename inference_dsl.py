@@ -58,12 +58,15 @@ class LSTMEncoderDecoder(nn.Module):
 
         return torch.cat(outputs, dim=1)
 
+
+model = LSTMEncoderDecoder(VOCAB_SIZE)
+model.load_state_dict(torch.load("model.pt", map_location="cpu"))
+model.eval()
+
+
 def predict_dsl(input_tokens):
     # input_tokens: list of strings (e.g., ["C2", "C1", "C6"])
     input_ids = [token_to_id[token] + 3 for token in input_tokens]
     input_tensor = torch.tensor([input_ids])
-    model = LSTMEncoderDecoder(VOCAB_SIZE)
-    model.load_state_dict(torch.load("model.pt", map_location="cpu"))
-    model.eval()
     output_ids = model.generate(input_tensor)[0]
     return [id_to_token[i.item() - 3] for i in output_ids if i.item() >= 3]
