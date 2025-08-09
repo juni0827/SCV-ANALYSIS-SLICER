@@ -4,7 +4,7 @@ import dearpygui.dearpygui as dpg
 
 from utils import AppState
 from ui import build_splitter, build_file_dialog, TAG_PRIMARY
-from layout import on_resize, apply_layout, auto_ratio  # ← on_mouse_release 제거
+from layout import on_resize, apply_layout, auto_ratio
 
 def _try_load_font(paths):
     for p in paths:
@@ -17,15 +17,19 @@ def _try_load_font(paths):
 def main():
     dpg.create_context()
 
-    # Fonts
+    # Fonts (한글/기본 글리프 포함)
     with dpg.font_registry():
         default_paths = [
-            str(Path("C:/Windows/Fonts/malgun.ttf")),
-            str(Path("/System/Library/Fonts/Supplemental/AppleGothic.ttf")),
-            str(Path("/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc")),
+            r"C:\Windows\Fonts\malgun.ttf",                                  # Windows
+            r"/System/Library/Fonts/Supplemental/AppleGothic.ttf",           # macOS
+            r"/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",       # Linux
         ]
         base_font = _try_load_font(default_paths)
-        if base_font:
+
+        # 글리프 힌트는 '해당 폰트'에 parent로 달아야 함
+        if base_font is not None:
+            dpg.add_font_range_hint(dpg.mvFontRangeHint_Default, parent=base_font)
+            dpg.add_font_range_hint(dpg.mvFontRangeHint_Korean,  parent=base_font)
             dpg.bind_font(base_font)
 
     # Global theme
@@ -70,3 +74,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
