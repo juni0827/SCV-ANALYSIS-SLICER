@@ -31,6 +31,7 @@ TAG_SPLITTER = "splitter_table"
 TAG_SPLIT_GROUP = "split_group"
 TAG_COMB_SCROLL = "comb_scroll"
 TAG_RECO_GROUP = "reco_group"
+TAG_FILE_DROP = "file_drop_handler"
 
 LAST_REPORT = None  # 마지막 조합/분석 결과 저장
 
@@ -134,6 +135,10 @@ def build_left_panel(state: AppState):
             dpg.add_progress_bar(tag="status_progress", show=False, width=-1)
         dpg.add_text("", tag="status_text", color=(180, 180, 180))
 
+    # Allow CSV files to be dropped onto the left panel
+    with dpg.item_handler_registry(tag=TAG_FILE_DROP):
+        dpg.add_file_drop_handler(callback=on_files_dropped, user_data=state)
+    dpg.bind_item_handler_registry(TAG_LEFT, TAG_FILE_DROP)
 def build_right_panel(state: AppState):
     with dpg.child_window(tag=TAG_RIGHT, width=880, autosize_y=True):
         with dpg.tab_bar():
@@ -171,6 +176,18 @@ def build_splitter(state: AppState):
     with dpg.group(horizontal=True, tag=TAG_SPLIT_GROUP):
         build_left_panel(state)
         build_right_panel(state)
+
+
+def on_files_dropped(sender, app_data, state: AppState):
+    """Handle file drops and load the first CSV path."""
+    if not app_data:
+        return
+    try:
+        file_path = app_data[0]
+        on_file_selected(state, file_path)
+    except Exception as e:
+        _safe_set_value("status", f"[ERROR] Drop failed: {e}")
+        show_toast(f"드래그앤드롭 오류: {e}", "error")
 
 def on_file_selected(state: AppState, app_data):
     try:
