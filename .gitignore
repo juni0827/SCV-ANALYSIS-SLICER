@@ -1,0 +1,46 @@
+# 빌드 결과물
+dist/
+build/
+*.spec
+
+# Python 캐시 파일
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 가상환경
+venv/
+env/
+ENV/
+
+# IDE 설정
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS 생성 파일
+.DS_Store
+Thumbs.db
+
+# 로그 파일
+*.log
+
+# 임시 파일
+*.tmp
+*.temp
+
+# PyInstaller 임시 파일
+*.toc
+*.pyz
+*.pyz.toc
+*.pyd
+*.dll
+*.exe
+*.app
+
+# 테스트 결과
+.pytest_cache/
+.coverage
+htmlcov/
