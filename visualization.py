@@ -237,9 +237,8 @@ def plot_regression_with_ci(df: pd.DataFrame, x_col: str, y_col: str, parent_tag
     fig, ax = plt.subplots(figsize=(10, 6), facecolor="#1a1a1a")
     
     # Clean data
-    data = df[[x_col, y_col]].dropna()
-    x = pd.to_numeric(data[x_col], errors='coerce')
-    y = pd.to_numeric(data[y_col], errors='coerce')
+    x = pd.to_numeric(df[x_col], errors='coerce')
+    y = pd.to_numeric(df[y_col], errors='coerce')
     clean_data = pd.concat([x, y], axis=1).dropna()
     
     if len(clean_data) < 3:
