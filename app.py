@@ -13,6 +13,14 @@ import matplotlib.patches as mpatches
 import numpy as np
 from single_instance import check_single_instance
 
+# UI Animation and Timing Constants (in milliseconds)
+TOAST_AUTO_CLOSE_TIMEOUT_MS = 3000
+FADE_ANIMATION_STEP_MS = 30
+THEME_TRANSITION_DELAY_MS = 50
+UI_UPDATE_DELAY_MS = 100
+FONT_UPDATE_DELAY_MS = 200
+SPINNER_ANIMATION_DELAY_MS = 500
+
 class AppState:
     def __init__(self):
         self.df: pd.DataFrame | None = None
@@ -91,7 +99,7 @@ class ToastWindow:
         self.fade_in()
         
         # 3초 후 자동 닫기
-        self.toast.after(3000, self.fade_out)
+        self.toast.after(TOAST_AUTO_CLOSE_TIMEOUT_MS, self.fade_out)
     
     def fade_in(self):
         """부드러운 나타나기 효과"""
@@ -103,7 +111,7 @@ class ToastWindow:
         if alpha < 0.95:
             alpha += 0.1
             self.toast.attributes('-alpha', alpha)
-            self.toast.after(30, lambda: self.fade_in_step(alpha))
+            self.toast.after(FADE_ANIMATION_STEP_MS, lambda: self.fade_in_step(alpha))
         else:
             self.toast.attributes('-alpha', 1.0)
     
@@ -117,7 +125,7 @@ class ToastWindow:
             alpha -= 0.1
             try:
                 self.toast.attributes('-alpha', alpha)
-                self.toast.after(30, lambda: self.fade_out_step(alpha))
+                self.toast.after(FADE_ANIMATION_STEP_MS, lambda: self.fade_out_step(alpha))
             except:
                 self.close()
         else:
@@ -213,10 +221,10 @@ class CSVAnalyzerApp:
         self.apply_theme_transition()
         
         # 통계 컨테이너 스타일 업데이트
-        self.root.after(100, self.update_stats_container_style)
+        self.root.after(UI_UPDATE_DELAY_MS, self.update_stats_container_style)
         
         # 통계 라벨 강제 업데이트
-        self.root.after(200, lambda: self.force_update_stat_labels(self.current_theme))
+        self.root.after(FONT_UPDATE_DELAY_MS, lambda: self.force_update_stat_labels(self.current_theme))
 
     def apply_theme_transition(self):
         """부드러운 테마 전환"""
@@ -233,17 +241,17 @@ class CSVAnalyzerApp:
             # 1단계: 메인 배경
             self.root.configure(bg=self.current_theme['bg'])
             self.transition_step += 1
-            self.root.after(50, self.transition_widgets)
+            self.root.after(THEME_TRANSITION_DELAY_MS, self.transition_widgets)
         elif self.transition_step == 1:
             # 2단계: 패널들
             self.apply_theme_to_panels()
             self.transition_step += 1
-            self.root.after(50, self.transition_widgets)
+            self.root.after(THEME_TRANSITION_DELAY_MS, self.transition_widgets)
         elif self.transition_step == 2:
             # 3단계: 텍스트 요소들
             self.apply_theme_to_text_elements()
             self.transition_step += 1
-            self.root.after(50, self.transition_widgets)
+            self.root.after(THEME_TRANSITION_DELAY_MS, self.transition_widgets)
         elif self.transition_step == 3:
             # 4단계: 마무리 및 버튼 업데이트
             self.finalize_theme_transition()
@@ -305,7 +313,7 @@ class CSVAnalyzerApp:
         # 버튼 크기 애니메이션 (약간의 펄스 효과)
         original_font = self.theme_toggle_btn.cget('font')
         self.theme_toggle_btn.configure(font=('Arial', 9, 'bold'))
-        self.root.after(100, lambda: self.theme_toggle_btn.configure(font=('Arial', 8)))
+        self.root.after(UI_UPDATE_DELAY_MS, lambda: self.theme_toggle_btn.configure(font=('Arial', 8)))
 
     def update_frame_theme(self, frame, theme):
         """프레임과 자식 위젯들 테마 업데이트"""
@@ -800,7 +808,7 @@ class CSVAnalyzerApp:
         else:
             self.spinner_label.config(text=current + '.')
         
-        self.busy_after_id = self.root.after(500, self.animate_spinner)
+        self.busy_after_id = self.root.after(SPINNER_ANIMATION_DELAY_MS, self.animate_spinner)
 
     def stop_spinner(self):
         """스피너 중지"""

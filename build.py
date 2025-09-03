@@ -3,18 +3,24 @@
 CSV Analyzer 빌드 스크립트
 PyInstaller를 사용하여 Windows 실행 파일(.exe)을 생성합니다.
 """
-
 import os
 import sys
 import shutil
 import subprocess
 from pathlib import Path
+from build_constants import (
+    EXECUTABLE_NAME, OUTPUT_DIRECTORY, BUILD_DIRECTORY,
+    EXCLUDED_MODULES, DATA_FILES, HIDDEN_IMPORTS,
+    BUILD_OPTIMIZATION_LEVEL, ENABLE_CLEAN_BUILD,
+    ENABLE_WINDOWED_MODE, ENABLE_ONE_FILE,
+    BYTES_PER_MB
+)
 
 def cleanup_build_files():
     """이전 빌드 파일들 정리"""
     print("🧹 이전 빌드 파일 정리 중...")
     
-    dirs_to_remove = ['build', 'dist', '__pycache__']
+    dirs_to_remove = [BUILD_DIRECTORY, OUTPUT_DIRECTORY, '__pycache__']
     files_to_remove = ['*.spec']  # 우리가 만든 csv_analyzer.spec는 제외
     
     for dir_name in dirs_to_remove:
@@ -34,36 +40,34 @@ def build_executable():
     """실행 파일 빌드"""
     print("🔨 CSV Analyzer 단일 인스턴스 실행 파일 빌드 중...")
     print("   (이 과정은 수 분이 소요될 수 있습니다...)")
-    
     # PyInstaller 명령어 구성
     cmd = [
         sys.executable, '-m', 'PyInstaller',
-        '--onefile',                    # 단일 실행 파일 생성
-        '--windowed',                   # 콘솔 창 숨김
-        '--name=CSV-Analyzer',          # 실행 파일 이름
-        '--clean',                      # 캐시 정리
-        
-        # 불필요한 모듈 제외 (크기 최적화)
-        '--exclude-module=dearpygui',
-        '--exclude-module=PyQt5',
-        '--exclude-module=PyQt6', 
-        '--exclude-module=PySide2',
-        '--exclude-module=PySide6',
-        '--exclude-module=wx',
-        '--exclude-module=test',
-        '--exclude-module=unittest',
-        
-        # 단일 인스턴스 모듈 포함
-        '--hidden-import=single_instance',
-        '--hidden-import=ctypes',
-        '--hidden-import=ctypes.wintypes',
-        
-        # 최적화 옵션
-        '--optimize=2',                 # 바이트코드 최적화
-        '--strip',                      # 심볼 제거 (Unix/Linux)
-        
-        'app.py'                        # 메인 스크립트
+        '--onefile' if ENABLE_ONE_FILE else '',
+        '--windowed' if ENABLE_WINDOWED_MODE else '',
+        f'--name={EXECUTABLE_NAME}',
+        '--clean' if ENABLE_CLEAN_BUILD else '',
+        f'--optimize={BUILD_OPTIMIZATION_LEVEL}',
+        '--strip',  # 심볼 제거 (Unix/Linux)
     ]
+    
+    # 불필요한 모듈 제외 (크기 최적화)
+    for module in EXCLUDED_MODULES:
+        cmd.append(f'--exclude-module={module}')
+    
+    # 숨겨진 imports 추가
+    for hidden_import in HIDDEN_IMPORTS:
+        cmd.append(f'--hidden-import={hidden_import}')
+    
+    # 데이터 파일 추가
+    for data_file in DATA_FILES:
+        cmd.append(f'--add-data={data_file};.')
+    
+    # 메인 스크립트 추가
+    cmd.append('app.py')
+    
+    # 빈 문자열 제거
+    cmd = [arg for arg in cmd if arg]
     
     try:
         # 빌드 실행
@@ -76,10 +80,10 @@ def build_executable():
 
 def check_result():
     """빌드 결과 확인"""
-    exe_path = Path('dist/CSV-Analyzer.exe')
+    exe_path = Path(f'{OUTPUT_DIRECTORY}/{EXECUTABLE_NAME}.exe')
     
     if exe_path.exists():
-        size_mb = exe_path.stat().st_size / (1024 * 1024)
+        size_mb = exe_path.stat().st_size / BYTES_PER_MB
         print(f"\n🎉 단일 인스턴스 빌드 성공!")
         print(f"📁 생성된 파일: {exe_path}")
         print(f"📏 파일 크기: {size_mb:.1f} MB")
