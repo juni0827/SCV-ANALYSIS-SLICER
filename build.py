@@ -25,7 +25,7 @@ def cleanup_build_files():
     import glob
     for pattern in files_to_remove:
         for file in glob.glob(pattern):
-            # csv_analyzer.spec는 제외하고 삭제
+            # csv_analyzer.spec 제외
             if file != 'csv_analyzer.spec':
                 os.remove(file)
                 print(f"   ✓ {file} 파일 제거")
