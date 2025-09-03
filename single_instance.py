@@ -10,6 +10,13 @@ import time
 import threading
 from pathlib import Path
 
+# Windows API constants
+PROCESS_QUERY_INFORMATION = 0x0400
+ERROR_ALREADY_EXISTS = 183
+
+# Timeout constants (in milliseconds)
+WINDOW_OPERATION_TIMEOUT_MS = 100
+
 
 class SingleInstanceManager:
     """단일 인스턴스 관리 클래스"""
@@ -59,7 +66,7 @@ class SingleInstanceManager:
             last_error = kernel32.GetLastError()
             
             # ERROR_ALREADY_EXISTS (183) = 이미 다른 인스턴스가 실행 중
-            if last_error == 183:
+            if last_error == ERROR_ALREADY_EXISTS:
                 kernel32.CloseHandle(self.mutex)
                 self.mutex = None
                 return True
@@ -122,7 +129,6 @@ class SingleInstanceManager:
             if sys.platform.startswith('win'):
                 import ctypes
                 kernel32 = ctypes.windll.kernel32
-                PROCESS_QUERY_INFORMATION = 0x0400
                 handle = kernel32.OpenProcess(PROCESS_QUERY_INFORMATION, False, pid)
                 if handle:
                     kernel32.CloseHandle(handle)
@@ -145,20 +151,52 @@ class SingleInstanceManager:
             return False
             
         try:
-            # 창이 최소화되어 있다면 복원
-            if self.main_window.state() == 'iconic':
-                self.main_window.deiconify()
+            # Step 1: Check if window is minimized and restore if needed
+            try:
+                if self.main_window.state() == 'iconic':
+                    self.main_window.deiconify()
+                    # Small delay to allow window restoration
+                    time.sleep(0.05)
+            except Exception as e:
+                print(f"Failed to deiconify window: {e}")
+                # Continue with other operations even if deiconify fails
             
-            # 창을 맨 앞으로 가져오기
-            self.main_window.lift()
-            self.main_window.focus_force()
-            self.main_window.attributes('-topmost', True)
-            self.main_window.after(100, lambda: self.main_window.attributes('-topmost', False))
+            # Step 2: Lift window to front
+            try:
+                self.main_window.lift()
+            except Exception as e:
+                print(f"Failed to lift window: {e}")
+                return False
+            
+            # Step 3: Force focus
+            try:
+                self.main_window.focus_force()
+            except Exception as e:
+                print(f"Failed to force focus: {e}")
+                # Continue even if focus fails
+            
+            # Step 4: Temporarily set topmost to ensure visibility
+            try:
+                self.main_window.attributes('-topmost', True)
+                # Use the timeout constant for consistent timing
+                self.main_window.after(WINDOW_OPERATION_TIMEOUT_MS, 
+                                     lambda: self._remove_topmost_safely())
+            except Exception as e:
+                print(f"Failed to set topmost attribute: {e}")
+                # Continue without topmost if it fails
             
             return True
         except Exception as e:
             print(f"Failed to bring window to front: {e}")
             return False
+    
+    def _remove_topmost_safely(self):
+        """Safely remove topmost attribute with error handling"""
+        try:
+            if self.main_window:
+                self.main_window.attributes('-topmost', False)
+        except Exception as e:
+            print(f"Failed to remove topmost attribute: {e}")
     
     def show_already_running_message(self):
         """이미 실행 중이라는 메시지 표시"""

@@ -9,12 +9,19 @@ import sys
 import shutil
 import subprocess
 from pathlib import Path
+from build_constants import (
+    EXECUTABLE_NAME, OUTPUT_DIRECTORY, BUILD_DIRECTORY,
+    EXCLUDED_MODULES, DATA_FILES, HIDDEN_IMPORTS,
+    BUILD_OPTIMIZATION_LEVEL, ENABLE_CLEAN_BUILD,
+    ENABLE_WINDOWED_MODE, ENABLE_ONE_FILE,
+    BYTES_PER_MB
+)
 
 def cleanup_build_files():
     """이전 빌드 파일들 정리"""
     print("🧹 이전 빌드 파일 정리 중...")
     
-    dirs_to_remove = ['build', 'dist', '__pycache__']
+    dirs_to_remove = [BUILD_DIRECTORY, OUTPUT_DIRECTORY, '__pycache__']
     files_to_remove = ['*.spec']  # 우리가 만든 csv_analyzer.spec는 제외
     
     for dir_name in dirs_to_remove:

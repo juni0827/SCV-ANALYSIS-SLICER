@@ -1,4 +1,5 @@
 @echo off
+setlocal EnableDelayedExpansion
 chcp 65001 >nul
 echo ========================================
 echo      CSV Analyzer 빌드 도구
