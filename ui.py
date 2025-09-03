@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 import dearpygui.dearpygui as dpg
+import numpy as np
 
 from utils import AppState, format_bytes
 from data_loader import load_csv, apply_filter, clear_filter
@@ -8,7 +9,10 @@ from analysis import column_profile
 from visualization import (
     plot_quick_distribution, plot_generic,
     # 병합본 visualization.py의 추가 플롯들
-    plot_heatmap_crosstab, plot_scatter_corr, plot_box_group
+    plot_heatmap_crosstab, plot_scatter_corr, plot_box_group,
+    # New advanced visualization functions
+    plot_regression_with_ci, plot_distribution_comparison, plot_pair_correlation,
+    plot_time_series_decomposition, plot_advanced_categorical
 )
 from layout import auto_ratio, apply_layout
 from export_utils import save_dataframe, save_analysis_report
@@ -154,10 +158,20 @@ def build_right_panel(state: AppState):
                     pass
             with dpg.tab(label="Visualization"):
                 with dpg.group(horizontal=True):
-                    dpg.add_combo(["Histogram", "Box Plot", "Scatter Plot", "Line", "ECDF"], label="Plot Type", width=150, tag="plot_type")
+                    dpg.add_combo(["Histogram", "Box Plot", "Scatter Plot", "Line", "ECDF", "Violin", "Density", "QQ Plot", "Ridge"], label="Plot Type", width=150, tag="plot_type")
                     dpg.add_button(label="Generate Plot", callback=lambda: on_generate_plot(state))
                 with dpg.child_window(height=650, tag=TAG_PLOT_CANVAS):
                     dpg.add_text("Select plot options above", color=(130, 130, 140))
+
+            with dpg.tab(label="Advanced Plots"):
+                with dpg.group(horizontal=True):
+                    dpg.add_combo(["Regression Analysis", "Distribution Comparison", "Correlation Matrix", "Time Series", "Enhanced Categorical"], 
+                                 label="Advanced Plot", width=180, tag="advanced_plot_type")
+                    dpg.add_combo(["No columns loaded"], width=150, tag="adv_column1", label="Column 1")
+                    dpg.add_combo(["No columns loaded"], width=150, tag="adv_column2", label="Column 2 (optional)")
+                    dpg.add_button(label="Generate Advanced Plot", callback=lambda: on_generate_advanced_plot(state))
+                with dpg.child_window(height=620, tag="advanced_plot_canvas"):
+                    dpg.add_text("Select advanced plot options above", color=(130, 130, 140))
 
             if HAVE_COMB:
                 with dpg.tab(label="Combinations"):
@@ -203,6 +217,9 @@ def on_file_selected(state: AppState, app_data):
         cols = list(state.df.columns)
         dpg.configure_item("column_selector", items=cols)
         dpg.configure_item("analysis_column", items=cols)
+        # Update advanced plot column dropdowns
+        dpg.configure_item("adv_column1", items=cols)
+        dpg.configure_item("adv_column2", items=["No columns loaded"] + cols)
         # 기본 파일명
         stem = Path(file_path).stem
         if dpg.does_item_exist("export_filename"):
@@ -282,6 +299,43 @@ def on_generate_plot(state: AppState):
         end_busy("[OK] 시각화 완료", ok=True)
     except Exception as e:
         end_busy(f"[ERROR] 시각화: {str(e)}", ok=False)
+
+def on_generate_advanced_plot(state: AppState):
+    if state.df is None:
+        show_toast("데이터가 없습니다. CSV를 먼저 로드하세요.", "warn"); return
+    
+    plot_type = dpg.get_value("advanced_plot_type")
+    column1 = dpg.get_value("adv_column1")
+    column2 = dpg.get_value("adv_column2")
+    
+    if not plot_type:
+        show_toast("고급 플롯 타입을 선택하세요.", "warn"); return
+    if not column1:
+        show_toast("최소 하나의 컬럼을 선택하세요.", "warn"); return
+    
+    begin_busy(f"Generating advanced plot: {plot_type}")
+    try:
+        if plot_type == "Regression Analysis":
+            if not column2 or column2 == "No columns loaded":
+                show_toast("회귀 분석에는 두 개의 컬럼이 필요합니다.", "warn"); return
+            plot_regression_with_ci(state.df, column1, column2, "advanced_plot_canvas")
+        elif plot_type == "Distribution Comparison":
+            plot_distribution_comparison(state.df, column1, column2 if column2 != "No columns loaded" else None, "advanced_plot_canvas")
+        elif plot_type == "Correlation Matrix":
+            numeric_cols = state.df.select_dtypes(include=[np.number]).columns.tolist()
+            if len(numeric_cols) < 2:
+                show_toast("상관관계 매트릭스에는 최소 2개의 수치형 컬럼이 필요합니다.", "warn"); return
+            plot_pair_correlation(state.df, numeric_cols, parent_tag="advanced_plot_canvas")
+        elif plot_type == "Time Series":
+            if not column2 or column2 == "No columns loaded":
+                show_toast("시계열 분석에는 날짜/시간 컬럼과 값 컬럼이 필요합니다.", "warn"); return
+            plot_time_series_decomposition(state.df, column1, column2, "advanced_plot_canvas")
+        elif plot_type == "Enhanced Categorical":
+            plot_advanced_categorical(state.df, column1, "advanced_plot_canvas")
+        
+        end_busy("[OK] 고급 시각화 완료", ok=True)
+    except Exception as e:
+        end_busy(f"[ERROR] 고급 시각화: {str(e)}", ok=False)
 
 def on_apply_filter(state: AppState):
     if state.df is None:
