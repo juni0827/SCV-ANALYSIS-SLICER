@@ -1,0 +1,109 @@
+{
+  "total_combinations": 4,
+  "significant_results_count": 0,
+  "anova_results": [
+    {
+      "numerical_column": "A",
+      "categorical_column": "C",
+      "f_statistic": 0.6206834585099378,
+      "p_value": 0.5396980874840438,
+      "eta_squared": 0.012635882943868637,
+      "effect_size": "\uc791\uc740 \ud6a8\uacfc",
+      "significant": "False",
+      "group_stats": {
+        "mean": {
+          "X": -0.02800000086426735,
+          "Y": -0.23600000143051147,
+          "Z": -0.024000000208616257
+        },
+        "std": {
+          "X": 0.8610000014305115,
+          "Y": 0.8730000257492065,
+          "Z": 1.0080000162124634
+        },
+        "count": {
+          "X": 33,
+          "Y": 37,
+          "Z": 30
+        }
+      }
+    },
+    {
+      "numerical_column": "B",
+      "categorical_column": "D",
+      "f_statistic": 0.5588997236021911,
+      "p_value": 0.45649404205121813,
+      "eta_squared": 0.005670717917382717,
+      "effect_size": "\ud6a8\uacfc \uc5c6\uc74c",
+      "significant": "False",
+      "group_stats": {
+        "mean": {
+          "P": 0.10300000011920929,
+          "Q": -0.04100000113248825
+        },
+        "std": {
+          "P": 0.9440000057220459,
+          "Q": 0.9649999737739563
+        },
+        "count": {
+          "P": 44,
+          "Q": 56
+        }
+      }
+    },
+    {
+      "numerical_column": "B",
+      "categorical_column": "C",
+      "f_statistic": 0.16419723979463838,
+      "p_value": 0.8488099920116443,
+      "eta_squared": 0.0033740864600986242,
+      "effect_size": "\ud6a8\uacfc \uc5c6\uc74c",
+      "significant": "False",
+      "group_stats": {
+        "mean": {
+          "X": -0.04500000178813934,
+          "Y": 0.024000000208616257,
+          "Z": 0.09399999678134918
+        },
+        "std": {
+          "X": 0.8050000071525574,
+          "Y": 1.0679999589920044,
+          "Z": 0.9819999933242798
+        },
+        "count": {
+          "X": 33,
+          "Y": 37,
+          "Z": 30
+        }
+      }
+    },
+    {
+      "numerical_column": "A",
+      "categorical_column": "D",
+      "f_statistic": 0.2869339357831168,
+      "p_value": 0.5934056797624795,
+      "eta_squared": 0.002919349819421768,
+      "effect_size": "\ud6a8\uacfc \uc5c6\uc74c",
+      "significant": "False",
+      "group_stats": {
+        "mean": {
+          "P": -0.1589999943971634,
+          "Q": -0.061000000685453415
+        },
+        "std": {
+          "P": 0.8410000205039978,
+          "Q": 0.9629999995231628
+        },
+        "count": {
+          "P": 44,
+          "Q": 56
+        }
+      }
+    }
+  ],
+  "summary": {
+    "max_eta_squared": 0.012635882943868637,
+    "avg_eta_squared": 0.006150009285192937,
+    "large_effects": 0
+  }
+}

@@ -419,7 +419,337 @@ def plot_time_series_decomposition(df: pd.DataFrame, date_col: str, value_col: s
     plt.tight_layout()
     _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=960, height=600)
 
-def plot_advanced_categorical(df: pd.DataFrame, col: str, parent_tag: str = "plot_canvas"):
+# --- Advanced Visualization Functions (사용자 요청 기능) ---
+
+def plot_scalar_field(df: pd.DataFrame, x_col: str, y_col: str, z_col: str, parent_tag: str = "plot_canvas"):
+    """Create a scalar field visualization using contour plots"""
+    plt.style.use("dark_background")
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6), facecolor="#1a1a1a")
+    
+    try:
+        # Clean and prepare data
+        x = pd.to_numeric(df[x_col], errors='coerce')
+        y = pd.to_numeric(df[y_col], errors='coerce')
+        z = pd.to_numeric(df[z_col], errors='coerce')
+        
+        clean_data = pd.concat([x, y, z], axis=1).dropna()
+        
+        if len(clean_data) < 10:
+            axes[0].text(0.5, 0.5, "Insufficient data for scalar field", ha="center", va="center", color='#CCCCCC')
+            _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=1120, height=420)
+            return
+        
+        # Create grid for interpolation
+        x_vals = clean_data[x_col].values
+        y_vals = clean_data[y_col].values
+        z_vals = clean_data[z_col].values
+        
+        # Create meshgrid for contour
+        xi = np.linspace(x_vals.min(), x_vals.max(), 100)
+        yi = np.linspace(y_vals.min(), y_vals.max(), 100)
+        XI, YI = np.meshgrid(xi, yi)
+        
+        # Interpolate Z values
+        from scipy.interpolate import griddata
+        ZI = griddata((x_vals, y_vals), z_vals, (XI, YI), method='linear')
+        
+        # 1. Contour plot
+        cs = axes[0].contourf(XI, YI, ZI, levels=20, cmap='viridis', alpha=0.8)
+        axes[0].scatter(x_vals, y_vals, c=z_vals, s=20, edgecolor='white', alpha=0.6, cmap='viridis')
+        axes[0].set_xlabel(x_col)
+        axes[0].set_ylabel(y_col)
+        axes[0].set_title(f"Scalar Field: {z_col}")
+        axes[0].set_facecolor("#1a1a1a")
+        fig.colorbar(cs, ax=axes[0], fraction=0.046, pad=0.04)
+        
+        # 2. Contour lines
+        cs2 = axes[1].contour(XI, YI, ZI, levels=10, colors='white', alpha=0.7)
+        axes[1].clabel(cs2, inline=True, fontsize=8, colors='white')
+        axes[1].scatter(x_vals, y_vals, c=z_vals, s=30, edgecolor='white', alpha=0.8, cmap='viridis')
+        axes[1].set_xlabel(x_col)
+        axes[1].set_ylabel(y_col)
+        axes[1].set_title(f"Contour Lines: {z_col}")
+        axes[1].set_facecolor("#1a1a1a")
+        
+        for ax in axes:
+            ax.tick_params(colors='#CCCCCC', labelsize=9)
+            for spine in ax.spines.values():
+                spine.set_color('#CCCCCC')
+                spine.set_alpha(0.3)
+            ax.grid(True, color='#404040', alpha=0.3, linestyle='-', linewidth=0.5)
+    
+    except Exception as e:
+        axes[0].text(0.5, 0.5, f"Error creating scalar field:\n{str(e)}", ha="center", va="center", color='#FF6B6B')
+    
+    plt.tight_layout()
+    _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=1120, height=420)
+
+def plot_gradient_field(df: pd.DataFrame, x_col: str, y_col: str, u_col: str, v_col: str, parent_tag: str = "plot_canvas"):
+    """Create a gradient/vector field visualization"""
+    plt.style.use("dark_background")
+    fig, ax = plt.subplots(figsize=(10, 8), facecolor="#1a1a1a")
+    
+    try:
+        # Clean and prepare data
+        x = pd.to_numeric(df[x_col], errors='coerce')
+        y = pd.to_numeric(df[y_col], errors='coerce')
+        u = pd.to_numeric(df[u_col], errors='coerce')
+        v = pd.to_numeric(df[v_col], errors='coerce')
+        
+        clean_data = pd.concat([x, y, u, v], axis=1).dropna()
+        
+        if len(clean_data) < 5:
+            ax.text(0.5, 0.5, "Insufficient data for gradient field", ha="center", va="center", color='#CCCCCC')
+            _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=860, height=600)
+            return
+        
+        # Create quiver plot
+        x_vals = clean_data[x_col].values
+        y_vals = clean_data[y_col].values
+        u_vals = clean_data[u_col].values
+        v_vals = clean_data[v_col].values
+        
+        # Normalize vectors for better visualization
+        magnitude = np.sqrt(u_vals**2 + v_vals**2)
+        max_magnitude = np.max(magnitude)
+        if max_magnitude > 0:
+            u_norm = u_vals / max_magnitude
+            v_norm = v_vals / max_magnitude
+        else:
+            u_norm, v_norm = u_vals, v_vals
+        
+        # Create the quiver plot
+        Q = ax.quiver(x_vals, y_vals, u_norm, v_norm, magnitude, 
+                     scale=30, scale_units='xy', angles='xy', 
+                     cmap='plasma', alpha=0.8, width=0.005)
+        
+        # Add colorbar
+        cbar = fig.colorbar(Q, ax=ax, fraction=0.046, pad=0.04)
+        cbar.set_label('Magnitude', color='#CCCCCC')
+        cbar.ax.yaxis.set_tick_params(color='#CCCCCC')
+        plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color='#CCCCCC')
+        
+        ax.set_xlabel(x_col)
+        ax.set_ylabel(y_col)
+        ax.set_title(f"Gradient Field: {u_col} × {v_col}")
+        ax.set_facecolor("#1a1a1a")
+        
+        # Styling
+        ax.tick_params(colors='#CCCCCC', labelsize=9)
+        for spine in ax.spines.values():
+            spine.set_color('#CCCCCC')
+            spine.set_alpha(0.3)
+        ax.grid(True, color='#404040', alpha=0.3, linestyle='-', linewidth=0.5)
+        
+        # Add magnitude statistics
+        mean_mag = np.mean(magnitude)
+        max_mag = np.max(magnitude)
+        ax.text(0.02, 0.98, f'Mean Magnitude: {mean_mag:.2f}\nMax Magnitude: {max_mag:.2f}', 
+                transform=ax.transAxes, fontsize=9, verticalalignment='top',
+                bbox=dict(boxstyle="round,pad=0.3", facecolor='#2a2a2a', alpha=0.8),
+                color='#CCCCCC')
+    
+    except Exception as e:
+        ax.text(0.5, 0.5, f"Error creating gradient field:\n{str(e)}", ha="center", va="center", color='#FF6B6B')
+    
+    plt.tight_layout()
+    _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=860, height=600)
+
+def plot_enhanced_scatter(df: pd.DataFrame, x_col: str, y_col: str, size_col: str = None, color_col: str = None, parent_tag: str = "plot_canvas"):
+    """Create an enhanced scatter plot with size and color encoding"""
+    plt.style.use("dark_background")
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6), facecolor="#1a1a1a")
+    
+    try:
+        # Clean and prepare data
+        x = pd.to_numeric(df[x_col], errors='coerce')
+        y = pd.to_numeric(df[y_col], errors='coerce')
+        
+        clean_cols = [x, y]
+        col_names = [x_col, y_col]
+        
+        if size_col and size_col in df.columns:
+            size = pd.to_numeric(df[size_col], errors='coerce')
+            clean_cols.append(size)
+            col_names.append(size_col)
+        
+        if color_col and color_col in df.columns:
+            if df[color_col].dtype in ['object', 'category']:
+                color = df[color_col].astype('category').cat.codes
+                is_categorical = True
+            else:
+                color = pd.to_numeric(df[color_col], errors='coerce')
+                is_categorical = False
+            clean_cols.append(color)
+            col_names.append(color_col)
+        
+        clean_data = pd.concat(clean_cols, axis=1).dropna()
+        
+        if len(clean_data) < 3:
+            axes[0].text(0.5, 0.5, "Insufficient data for enhanced scatter", ha="center", va="center", color='#CCCCCC')
+            _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=1120, height=420)
+            return
+        
+        # 1. Enhanced scatter plot
+        ax1 = axes[0]
+        
+        # Base scatter parameters
+        scatter_kwargs = {
+            'x': clean_data[x_col],
+            'y': clean_data[y_col],
+            'alpha': 0.7,
+            'edgecolors': 'white',
+            'linewidth': 0.5
+        }
+        
+        # Add size encoding
+        if size_col and size_col in clean_data.columns:
+            sizes = (clean_data[size_col] - clean_data[size_col].min()) / (clean_data[size_col].max() - clean_data[size_col].min())
+            scatter_kwargs['s'] = 20 + sizes * 80  # Size range: 20-100
+        
+        # Add color encoding
+        if color_col and color_col in clean_data.columns:
+            if is_categorical:
+                scatter_kwargs['c'] = clean_data[color_col]
+                scatter_kwargs['cmap'] = 'tab10'
+            else:
+                scatter_kwargs['c'] = clean_data[color_col]
+                scatter_kwargs['cmap'] = 'viridis'
+        
+        scatter = ax1.scatter(**scatter_kwargs)
+        
+        ax1.set_xlabel(x_col)
+        ax1.set_ylabel(y_col)
+        ax1.set_title("Enhanced Scatter Plot")
+        ax1.set_facecolor("#1a1a1a")
+        
+        # Add colorbar if numeric color
+        if color_col and color_col in clean_data.columns and not is_categorical:
+            cbar = fig.colorbar(scatter, ax=ax1, fraction=0.046, pad=0.04)
+            cbar.set_label(color_col, color='#CCCCCC')
+            cbar.ax.yaxis.set_tick_params(color='#CCCCCC')
+            plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color='#CCCCCC')
+        
+        # 2. Marginal distributions
+        ax2 = axes[1]
+        
+        # X marginal
+        ax2_x = ax2.inset_axes([0, 0.5, 1, 0.4])
+        ax2_x.hist(clean_data[x_col], bins=30, alpha=0.7, color='#4ECDC4', density=True)
+        ax2_x.set_xticklabels([])
+        ax2_x.set_yticklabels([])
+        ax2_x.set_title("X Distribution", fontsize=9)
+        ax2_x.set_facecolor("#2a2a2a")
+        
+        # Y marginal
+        ax2_y = ax2.inset_axes([0.1, 0, 0.4, 0.5])
+        ax2_y.hist(clean_data[y_col], bins=30, alpha=0.7, color='#FF6B6B', density=True, orientation='horizontal')
+        ax2_y.set_xticklabels([])
+        ax2_y.set_yticklabels([])
+        ax2_y.set_title("Y Distribution", fontsize=9)
+        ax2_y.set_facecolor("#2a2a2a")
+        
+        # Main area for correlation info
+        ax2.text(0.6, 0.3, f"Points: {len(clean_data):,}\nCorrelation: {clean_data[x_col].corr(clean_data[y_col]):.3f}", 
+                transform=ax2.transAxes, fontsize=10, verticalalignment='center',
+                bbox=dict(boxstyle="round,pad=0.5", facecolor='#2a2a2a', alpha=0.8),
+                color='#CCCCCC')
+        
+        ax2.set_xlim(0, 1)
+        ax2.set_ylim(0, 1)
+        ax2.axis('off')
+        ax2.set_title("Statistics", fontsize=11)
+        
+        # Styling
+        for ax in [ax1, ax2_x, ax2_y]:
+            ax.tick_params(colors='#CCCCCC', labelsize=9)
+            for spine in ax.spines.values():
+                spine.set_color('#CCCCCC')
+                spine.set_alpha(0.3)
+            if ax != ax2_x and ax != ax2_y:
+                ax.grid(True, color='#404040', alpha=0.3, linestyle='-', linewidth=0.5)
+    
+    except Exception as e:
+        axes[0].text(0.5, 0.5, f"Error creating enhanced scatter:\n{str(e)}", ha="center", va="center", color='#FF6B6B')
+    
+    plt.tight_layout()
+    _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=1120, height=420)
+
+def plot_3d_surface(df: pd.DataFrame, x_col: str, y_col: str, z_col: str, parent_tag: str = "plot_canvas"):
+    """Create a 3D surface plot for scalar field visualization"""
+    plt.style.use("dark_background")
+    fig = plt.figure(figsize=(12, 8), facecolor="#1a1a1a")
+    ax = fig.add_subplot(111, projection='3d')
+    
+    try:
+        # Clean and prepare data
+        x = pd.to_numeric(df[x_col], errors='coerce')
+        y = pd.to_numeric(df[y_col], errors='coerce')
+        z = pd.to_numeric(df[z_col], errors='coerce')
+        
+        clean_data = pd.concat([x, y, z], axis=1).dropna()
+        
+        if len(clean_data) < 10:
+            ax.text2D(0.5, 0.5, "Insufficient data for 3D surface", ha="center", va="center", color='#CCCCCC')
+            _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=960, height=720)
+            return
+        
+        # Create grid for surface
+        x_vals = clean_data[x_col].values
+        y_vals = clean_data[y_col].values
+        z_vals = clean_data[z_col].values
+        
+        # Create meshgrid
+        xi = np.linspace(x_vals.min(), x_vals.max(), 50)
+        yi = np.linspace(y_vals.min(), y_vals.max(), 50)
+        XI, YI = np.meshgrid(xi, yi)
+        
+        # Interpolate Z values
+        from scipy.interpolate import griddata
+        ZI = griddata((x_vals, y_vals), z_vals, (XI, YI), method='cubic')
+        
+        # Create 3D surface
+        surf = ax.plot_surface(XI, YI, ZI, cmap='viridis', alpha=0.8, 
+                              linewidth=0, antialiased=True)
+        
+        # Add scatter points
+        ax.scatter(x_vals, y_vals, z_vals, c=z_vals, cmap='viridis', 
+                  s=20, alpha=0.6, edgecolors='white')
+        
+        # Styling
+        ax.set_xlabel(x_col, color='#CCCCCC')
+        ax.set_ylabel(y_col, color='#CCCCCC')
+        ax.set_zlabel(z_col, color='#CCCCCC')
+        ax.set_title(f"3D Surface: {z_col}", color='#CCCCCC')
+        
+        # Set background colors
+        ax.set_facecolor("#1a1a1a")
+        ax.xaxis.pane.fill = False
+        ax.yaxis.pane.fill = False
+        ax.zaxis.pane.fill = False
+        ax.xaxis.pane.set_edgecolor('#404040')
+        ax.yaxis.pane.set_edgecolor('#404040')
+        ax.zaxis.pane.set_edgecolor('#404040')
+        
+        # Set tick colors
+        ax.tick_params(colors='#CCCCCC', labelsize=8)
+        
+        # Add colorbar
+        cbar = fig.colorbar(surf, ax=ax, fraction=0.046, pad=0.04, shrink=0.8)
+        cbar.set_label(z_col, color='#CCCCCC')
+        cbar.ax.yaxis.set_tick_params(color='#CCCCCC')
+        plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color='#CCCCCC')
+        
+        # Set viewing angle
+        ax.view_init(elev=30, azim=45)
+    
+    except Exception as e:
+        ax.text2D(0.5, 0.5, f"Error creating 3D surface:\n{str(e)}", ha="center", va="center", color='#FF6B6B')
+    
+    plt.tight_layout()
+    _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=960, height=720)
+
+def plot_categorical_overview(df: pd.DataFrame, col: str, parent_tag: str = "plot_canvas"):
     """Enhanced categorical visualization with multiple perspectives"""
     plt.style.use("dark_background")
     fig, axes = plt.subplots(2, 2, figsize=(12, 8), facecolor="#1a1a1a")

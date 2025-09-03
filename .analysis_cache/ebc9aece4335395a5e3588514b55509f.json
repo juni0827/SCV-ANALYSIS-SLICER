@@ -1,0 +1,20 @@
+{
+  "total_combinations": 1,
+  "strong_correlations_count": 0,
+  "strong_correlations": [],
+  "correlation_matrix": {
+    "A": {
+      "A": 1.0,
+      "B": -0.136
+    },
+    "B": {
+      "A": -0.136,
+      "B": 1.0
+    }
+  },
+  "summary": {
+    "max_correlation": 0,
+    "avg_correlation": 0.5682111041782123,
+    "highly_correlated_pairs": 0
+  }
+}

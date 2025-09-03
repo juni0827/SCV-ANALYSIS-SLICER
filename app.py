@@ -128,12 +128,48 @@ class ToastWindow:
         except:
             pass
 
+class DataCache:
+    """데이터 캐싱 시스템"""
+    def __init__(self, max_size: int = 50):
+        self._cache = {}
+        self._max_size = max_size
+        self._access_order = []
+    
+    def get(self, key):
+        """캐시에서 데이터 가져오기"""
+        if key in self._cache:
+            # LRU 순서 업데이트
+            self._access_order.remove(key)
+            self._access_order.append(key)
+            return self._cache[key]
+        return None
+    
+    def set(self, key, value):
+        """캐시에 데이터 저장"""
+        if key in self._cache:
+            self._access_order.remove(key)
+        elif len(self._cache) >= self._max_size:
+            # 가장 오래된 항목 제거
+            oldest_key = self._access_order.pop(0)
+            del self._cache[oldest_key]
+        
+        self._cache[key] = value
+        self._access_order.append(key)
+    
+    def clear(self):
+        """캐시 비우기"""
+        self._cache.clear()
+        self._access_order.clear()
+
 class CSVAnalyzerApp:
     def __init__(self, root):
         self.root = root
         self.state = AppState()
         self.toast = None
         self.busy_after_id = None
+        
+        # 캐싱 시스템 추가
+        self.data_cache = DataCache()
         
         # 다크모드 설정
         self.is_dark_mode = False
@@ -172,9 +208,57 @@ class CSVAnalyzerApp:
             }
         }
         
-        self.current_theme = self.themes['light']
-
-    def setup_styles(self):
+    def update_widget_theme_optimized(self, widget, theme, visited=None, max_depth=10):
+        """최적화된 테마 업데이트 (재귀 호출 제한 및 캐싱)"""
+        if visited is None:
+            visited = set()
+        
+        widget_id = id(widget)
+        if widget_id in visited:
+            return
+        visited.add(widget_id)
+        
+        # 최대 방문 제한 및 깊이 제한
+        if len(visited) > 1000 or max_depth <= 0:
+            return
+        
+        try:
+            widget_class = widget.winfo_class()
+            
+            # 자주 사용되는 위젯 타입 우선 처리
+            if widget_class in ['Frame', 'Toplevel']:
+                if widget_class == 'Frame':
+                    widget.configure(bg=theme['panel_bg'])
+            elif widget_class == 'Label':
+                # 라벨 배경색이 테마 색상이면 업데이트
+                current_bg = str(widget.cget('bg'))
+                if current_bg in ['white', '#FFFFFF', '#2D2D30', '#FAFAFA', '#383838', '#2B2B2B']:
+                    widget.configure(bg=theme['panel_bg'], fg=theme['text_color'])
+            elif widget_class == 'Button':
+                # 일반 버튼만 업데이트 (특정 버튼 제외)
+                current_text = str(widget.cget('text'))
+                if current_text not in ['🌙', '☀️', 'Toggle Dark Mode']:
+                    current_bg = str(widget.cget('bg'))
+                    if current_bg in ['#F0F0F0', '#FAFAFA', '#E1E1E1', '#D4D4D4', '#2B2B2B', '#383838', 'SystemButtonFace']:
+                        widget.configure(bg=theme['button_bg'], fg=theme['button_fg'])
+            elif widget_class == 'Text':
+                widget.configure(bg=theme['tree_bg'], fg=theme['text_color'], insertbackground=theme['text_color'])
+            elif widget_class == 'Entry':
+                widget.configure(
+                    bg=theme['entry_bg'], 
+                    fg=theme['text_color'], 
+                    insertbackground=theme['text_color'],
+                    relief='flat',
+                    bd=1
+                )
+            
+            # 자식 위젯들에 제한된 깊이로 재귀 적용
+            for child in widget.winfo_children():
+                self.update_widget_theme_optimized(child, theme, visited, max_depth - 1)
+                
+        except tk.TclError:
+            # 일부 위젯은 특정 속성을 지원하지 않을 수 있음
+            pass
         """스타일 설정"""
         style = ttk.Style()
         style.theme_use('clam')
@@ -650,6 +734,475 @@ class CSVAnalyzerApp:
         
         # CSV Slicer 탭
         self.build_slicer_tab()
+        
+        # Combinations Analysis 탭
+        self.build_combinations_tab()
+
+    def build_slicer_tab(self):
+        """CSV 슬라이싱 탭 - 대용량 데이터 지원"""
+        slicer_frame = ttk.Frame(self.notebook)
+        self.notebook.add(slicer_frame, text="CSV Slicer")
+
+        # 컨트롤 영역
+        control_frame = tk.Frame(slicer_frame, bg=self.current_theme['panel_bg'])
+        control_frame.pack(fill='x', padx=10, pady=10)
+
+        # 행 범위 선택
+        range_frame = tk.Frame(control_frame, bg=self.current_theme['panel_bg'])
+        range_frame.pack(fill='x', pady=(0, 10))
+
+        tk.Label(range_frame, text="Row Range:", font=('Arial', 10, 'bold'),
+                bg=self.current_theme['panel_bg'], fg=self.current_theme['text_color']).pack(side='left')
+
+        # 시작 행
+        tk.Label(range_frame, text="Start:", bg=self.current_theme['panel_bg'], 
+                fg=self.current_theme['text_color']).pack(side='left', padx=(10, 5))
+        self.start_row_var = tk.StringVar(value="0")
+        self.start_row_entry = tk.Entry(range_frame, textvariable=self.start_row_var, width=10,
+                                       bg=self.current_theme['entry_bg'], fg=self.current_theme['text_color'])
+        self.start_row_entry.pack(side='left', padx=(0, 10))
+
+        # 끝 행
+        tk.Label(range_frame, text="End:", bg=self.current_theme['panel_bg'], 
+                fg=self.current_theme['text_color']).pack(side='left', padx=(0, 5))
+        self.end_row_var = tk.StringVar(value="1000")
+        self.end_row_entry = tk.Entry(range_frame, textvariable=self.end_row_var, width=10,
+                                     bg=self.current_theme['entry_bg'], fg=self.current_theme['text_color'])
+        self.end_row_entry.pack(side='left', padx=(0, 10))
+
+        # 컬럼 선택
+        column_frame = tk.Frame(control_frame, bg=self.current_theme['panel_bg'])
+        column_frame.pack(fill='x', pady=(0, 10))
+
+        tk.Label(column_frame, text="Columns:", font=('Arial', 10, 'bold'),
+                bg=self.current_theme['panel_bg'], fg=self.current_theme['text_color']).pack(side='left')
+
+        # 컬럼 선택 체크박스들
+        self.column_checkboxes = {}
+        self.column_vars = {}
+        
+        # 컬럼 선택을 위한 스크롤 가능한 프레임
+        column_scroll_frame = tk.Frame(column_frame, bg=self.current_theme['panel_bg'])
+        column_scroll_frame.pack(side='left', fill='x', expand=True, padx=(10, 0))
+        
+        self.column_canvas = tk.Canvas(column_scroll_frame, height=60, bg=self.current_theme['panel_bg'])
+        scrollbar = ttk.Scrollbar(column_scroll_frame, orient="horizontal", command=self.column_canvas.xview)
+        self.column_canvas.configure(xscrollcommand=scrollbar.set)
+        
+        self.column_canvas.pack(side='top', fill='x', expand=True)
+        scrollbar.pack(side='bottom', fill='x')
+        
+        self.column_inner_frame = tk.Frame(self.column_canvas, bg=self.current_theme['panel_bg'])
+        self.column_canvas.create_window((0, 0), window=self.column_inner_frame, anchor='nw')
+        
+        # Select All / Clear All 버튼들
+        button_frame = tk.Frame(control_frame, bg=self.current_theme['panel_bg'])
+        button_frame.pack(fill='x', pady=(0, 10))
+        
+        self.select_all_btn = self.create_styled_button(button_frame, "Select All", 
+                                                       self.select_all_columns, '#27AE60')
+        self.select_all_btn.pack(side='left', padx=(0, 5))
+        
+        self.clear_all_btn = self.create_styled_button(button_frame, "Clear All", 
+                                                      self.clear_all_columns, '#E74C3C')
+        self.clear_all_btn.pack(side='left', padx=(0, 5))
+
+        # 슬라이스 및 내보내기 버튼
+        self.slice_btn = self.create_styled_button(control_frame, "Slice Data", 
+                                                  self.slice_data, '#3498DB')
+        self.slice_btn.pack(side='left', padx=(0, 5))
+
+        self.export_slice_btn = self.create_styled_button(control_frame, "Export Sliced Data", 
+                                                         self.export_sliced_data, '#9B59B6')
+        self.export_slice_btn.pack(side='left')
+
+        # 슬라이스된 데이터 표시 영역
+        result_frame = tk.Frame(slicer_frame, bg=self.current_theme['panel_bg'])
+        result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+
+        # 결과 정보
+        info_frame = tk.Frame(result_frame, bg=self.current_theme['panel_bg'])
+        info_frame.pack(fill='x', pady=(0, 5))
+        
+        self.slice_info_label = tk.Label(info_frame, text="No data sliced yet", 
+                                        font=('Arial', 9), fg=self.current_theme['secondary_text'],
+                                        bg=self.current_theme['panel_bg'])
+        self.slice_info_label.pack(side='left')
+
+        # 슬라이스된 데이터 Treeview
+        tree_container = tk.Frame(result_frame, bg=self.current_theme['panel_bg'])
+        tree_container.pack(fill=tk.BOTH, expand=True)
+
+        self.slicer_tree = ttk.Treeview(tree_container, show='tree headings', height=20)
+        
+        # 스크롤바
+        v_scrollbar = ttk.Scrollbar(tree_container, orient=tk.VERTICAL, command=self.slicer_tree.yview)
+        h_scrollbar = ttk.Scrollbar(tree_container, orient=tk.HORIZONTAL, command=self.slicer_tree.xview)
+        
+        self.slicer_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        # 그리드 배치
+        self.slicer_tree.grid(row=0, column=0, sticky='nsew')
+        v_scrollbar.grid(row=0, column=1, sticky='ns')
+        h_scrollbar.grid(row=1, column=0, sticky='ew')
+        
+        tree_container.grid_rowconfigure(0, weight=1)
+        tree_container.grid_columnconfigure(0, weight=1)
+
+        # 초기 상태
+        self.current_sliced_data = None
+        self.update_column_checkboxes()
+
+    def update_column_checkboxes(self):
+        """컬럼 체크박스 업데이트"""
+        # 기존 체크박스 제거
+        for widget in self.column_inner_frame.winfo_children():
+            widget.destroy()
+        
+        if self.state.df is None:
+            return
+        
+        # 컬럼별 체크박스 생성
+        for i, col in enumerate(self.state.df.columns):
+            var = tk.BooleanVar(value=True)  # 기본적으로 모두 선택
+            self.column_vars[col] = var
+            
+            cb = tk.Checkbutton(self.column_inner_frame, text=col, variable=var,
+                               bg=self.current_theme['panel_bg'], fg=self.current_theme['text_color'],
+                               selectcolor=self.current_theme['entry_bg'])
+            cb.pack(side='left', padx=5)
+        
+        # 캔버스 크기 업데이트
+        self.column_inner_frame.update_idletasks()
+        self.column_canvas.configure(scrollregion=self.column_canvas.bbox('all'))
+
+    def select_all_columns(self):
+        """모든 컬럼 선택"""
+        for var in self.column_vars.values():
+            var.set(True)
+
+    def clear_all_columns(self):
+        """모든 컬럼 선택 해제"""
+        for var in self.column_vars.values():
+            var.set(False)
+
+    def slice_data(self):
+        """데이터 슬라이싱 실행"""
+        if self.state.df is None:
+            self.show_toast("No data loaded", "error")
+            return
+        
+        try:
+            # 행 범위 파싱
+            start_row = int(self.start_row_var.get())
+            end_row = int(self.end_row_var.get())
+            
+            # 유효성 검사
+            if start_row < 0:
+                start_row = 0
+            if end_row > len(self.state.df):
+                end_row = len(self.state.df)
+            if start_row >= end_row:
+                self.show_toast("Invalid row range", "error")
+                return
+            
+            # 선택된 컬럼들
+            selected_columns = [col for col, var in self.column_vars.items() if var.get()]
+            if not selected_columns:
+                self.show_toast("No columns selected", "error")
+                return
+            
+            # 데이터 슬라이싱 (최적화된 방식)
+            self.current_sliced_data = self.state.df.iloc[start_row:end_row][selected_columns].copy()
+            
+            # 결과 표시
+            self.display_sliced_data()
+            
+            # 정보 업데이트
+            info_text = f"Sliced {len(self.current_sliced_data):,} rows, {len(selected_columns)} columns"
+            self.slice_info_label.config(text=info_text)
+            
+            self.show_toast(f"Data sliced successfully: {len(self.current_sliced_data)} rows", "ok")
+            
+        except ValueError as e:
+            self.show_toast(f"Invalid input: {e}", "error")
+        except Exception as e:
+            self.show_toast(f"Slicing failed: {e}", "error")
+
+    def display_sliced_data(self):
+        """슬라이스된 데이터 표시 (페이지네이션 지원)"""
+        if self.current_sliced_data is None or self.current_sliced_data.empty:
+            return
+        
+        # Treeview 초기화
+        for item in self.slicer_tree.get_children():
+            self.slicer_tree.delete(item)
+        
+        # 컬럼 헤더 설정
+        self.slicer_tree['columns'] = list(self.current_sliced_data.columns)
+        for col in self.current_sliced_data.columns:
+            self.slicer_tree.heading(col, text=col)
+            self.slicer_tree.column(col, width=min(120, len(str(col)) * 8))
+        
+        # 데이터 표시 (최대 10000행까지 표시 제한 해제 - 페이지네이션으로 처리)
+        max_display_rows = min(5000, len(self.current_sliced_data))  # 성능을 위해 5000행으로 제한
+        
+        for idx, row in self.current_sliced_data.head(max_display_rows).iterrows():
+            values = []
+            for val in row:
+                if isinstance(val, float):
+                    values.append(f"{val:.2f}")
+                elif pd.isna(val):
+                    values.append("")
+                else:
+                    values.append(str(val))
+            self.slicer_tree.insert('', 'end', values=values)
+        
+        # 대용량 데이터 안내
+        if len(self.current_sliced_data) > max_display_rows:
+            self.show_toast(f"Showing first {max_display_rows:,} rows of {len(self.current_sliced_data):,} total rows", "info")
+
+    def export_sliced_data(self):
+        """슬라이스된 데이터 내보내기"""
+        if self.current_sliced_data is None:
+            self.show_toast("No sliced data to export", "error")
+            return
+        
+        try:
+            from tkinter import filedialog
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                title="Save sliced data"
+            )
+            
+            if file_path:
+                self.current_sliced_data.to_csv(file_path, index=True)
+                self.show_toast(f"Exported to {file_path}", "success")
+                
+        except Exception as e:
+            self.show_toast(f"Export failed: {e}", "error")
+
+    def build_combinations_tab(self):
+        """조합 분석 탭"""
+        combinations_frame = ttk.Frame(self.notebook)
+        self.notebook.add(combinations_frame, text="Combinations Analysis")
+
+        # 메인 컨테이너
+        main_container = tk.Frame(combinations_frame, bg=self.current_theme['panel_bg'])
+        main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # 상단 컨트롤 영역
+        control_frame = tk.Frame(main_container, bg=self.current_theme['panel_bg'])
+        control_frame.pack(fill='x', pady=(0, 10))
+
+        # 제목
+        title_label = tk.Label(control_frame, text="데이터 관계 분석", 
+                              font=('Arial', 12, 'bold'),
+                              bg=self.current_theme['panel_bg'], 
+                              fg=self.current_theme['text_color'])
+        title_label.pack(side='left')
+
+        # 분석 실행 버튼
+        self.run_combinations_btn = tk.Button(control_frame, text="분석 실행",
+                                            command=self.run_combinations_analysis,
+                                            bg=self.current_theme['button_bg'],
+                                            fg=self.current_theme['button_fg'],
+                                            font=('Arial', 10, 'bold'),
+                                            relief='flat', bd=0, padx=20, pady=8)
+        self.run_combinations_btn.pack(side='right')
+
+        # 설정 영역
+        settings_frame = tk.Frame(main_container, bg=self.current_theme['panel_bg'])
+        settings_frame.pack(fill='x', pady=(0, 10))
+
+        # DSL 토큰 입력
+        dsl_label = tk.Label(settings_frame, text="DSL 토큰 (선택사항):",
+                           bg=self.current_theme['panel_bg'], 
+                           fg=self.current_theme['text_color'])
+        dsl_label.pack(side='left', padx=(0, 10))
+
+        self.dsl_tokens_entry = tk.Entry(settings_frame, width=30,
+                                       bg=self.current_theme['entry_bg'],
+                                       fg=self.current_theme['text_color'],
+                                       insertbackground=self.current_theme['text_color'])
+        self.dsl_tokens_entry.pack(side='left', padx=(0, 20))
+
+        # 상위 K개 결과 설정
+        topk_label = tk.Label(settings_frame, text="상위 결과 수:",
+                            bg=self.current_theme['panel_bg'], 
+                            fg=self.current_theme['text_color'])
+        topk_label.pack(side='left', padx=(0, 5))
+
+        self.topk_var = tk.StringVar(value="10")
+        topk_entry = tk.Entry(settings_frame, textvariable=self.topk_var, width=5,
+                            bg=self.current_theme['entry_bg'],
+                            fg=self.current_theme['text_color'],
+                            insertbackground=self.current_theme['text_color'])
+        topk_entry.pack(side='left')
+
+        # 결과 표시 영역
+        result_frame = tk.Frame(main_container, bg=self.current_theme['panel_bg'])
+        result_frame.pack(fill=tk.BOTH, expand=True)
+
+        # 결과 텍스트 위젯 (스크롤 포함)
+        text_frame = tk.Frame(result_frame)
+        text_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.combinations_result_text = tk.Text(text_frame, 
+                                              bg=self.current_theme['tree_bg'],
+                                              fg=self.current_theme['text_color'],
+                                              insertbackground=self.current_theme['text_color'],
+                                              font=('Consolas', 9),
+                                              wrap=tk.WORD)
+        
+        # 스크롤바
+        scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=self.combinations_result_text.yview)
+        self.combinations_result_text.configure(yscrollcommand=scrollbar.set)
+        
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.combinations_result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # 초기 안내 메시지
+        initial_message = """
+📊 조합 분석 도구
+
+이 도구는 데이터의 컬럼 간 관계를 자동으로 분석합니다:
+
+🔢 수치형 분석: 
+   • 상관관계 분석
+   • 피어슨 상관계수
+   
+📊 범주형 분석:
+   • Cramér's V 계산
+   • 카이제곱 검정
+   • 연관규칙 분석
+   
+🔀 혼합형 분석:
+   • ANOVA 분석
+   • 효과 크기 계산
+
+사용법:
+1. 데이터를 먼저 로드하세요
+2. 필요시 DSL 토큰을 입력하세요 (예: C1,C2,C3)
+3. '분석 실행' 버튼을 클릭하세요
+
+분석 결과는 아래에 표시됩니다.
+        """
+        self.combinations_result_text.insert(1.0, initial_message)
+        self.combinations_result_text.config(state=tk.DISABLED)
+
+    def run_combinations_analysis(self):
+        """조합 분석 실행"""
+        if self.state.df is None:
+            self.show_toast("데이터를 먼저 로드해주세요", "error")
+            return
+
+        try:
+            # 분석 중 상태 표시
+            self.run_combinations_btn.config(text="분석 중...", state="disabled")
+            self.combinations_result_text.config(state=tk.NORMAL)
+            self.combinations_result_text.delete(1.0, tk.END)
+            self.combinations_result_text.insert(1.0, "🔄 분석을 실행 중입니다...\n")
+            self.combinations_result_text.config(state=tk.DISABLED)
+            self.root.update()
+
+            # DSL 토큰 파싱
+            dsl_tokens = None
+            if self.dsl_tokens_entry.get().strip():
+                dsl_tokens = [token.strip() for token in self.dsl_tokens_entry.get().split(',')]
+
+            # 분석 설정
+            from combinations import AdvancedCombinationsAnalyzer, AnalysisConfig
+            
+            try:
+                top_k = int(self.topk_var.get())
+            except ValueError:
+                top_k = 10
+
+            config = AnalysisConfig(
+                top_k=top_k,
+                parallel_processing=False,  # GUI에서는 단일 스레드 사용
+                enable_caching=True
+            )
+
+            # 분석 실행
+            analyzer = AdvancedCombinationsAnalyzer(config)
+            results = analyzer.analyze_all_combinations(self.state.df, dsl_tokens)
+
+            # 결과 표시
+            summary = analyzer.get_analysis_summary(results)
+            detailed_results = self.format_detailed_results(results)
+
+            # 텍스트 위젯에 결과 표시
+            self.combinations_result_text.config(state=tk.NORMAL)
+            self.combinations_result_text.delete(1.0, tk.END)
+            self.combinations_result_text.insert(1.0, summary + "\n\n" + detailed_results)
+            self.combinations_result_text.config(state=tk.DISABLED)
+
+            # 성공 토스트
+            self.show_toast("분석이 완료되었습니다", "success")
+
+        except Exception as e:
+            # 오류 처리
+            self.combinations_result_text.config(state=tk.NORMAL)
+            self.combinations_result_text.delete(1.0, tk.END)
+            self.combinations_result_text.insert(1.0, f"❌ 분석 중 오류가 발생했습니다:\n\n{str(e)}")
+            self.combinations_result_text.config(state=tk.DISABLED)
+            self.show_toast(f"분석 실패: {str(e)}", "error")
+
+        finally:
+            # 버튼 상태 복원
+            self.run_combinations_btn.config(text="분석 실행", state="normal")
+
+    def format_detailed_results(self, results):
+        """상세 결과 포맷팅"""
+        detailed = ["=" * 60, "📈 상세 분석 결과", "=" * 60, ""]
+
+        # 수치형 조합 결과
+        if "numerical_combinations" in results and "error" not in results["numerical_combinations"]:
+            num_results = results["numerical_combinations"]
+            detailed.extend([
+                "🔢 수치형 컬럼 상관관계 분석:", 
+                "-" * 30
+            ])
+            
+            for idx, corr in enumerate(num_results.get("strong_correlations", [])[:5], 1):
+                detailed.append(f"{idx}. {corr['column1']} ↔ {corr['column2']}")
+                detailed.append(f"   상관계수: {corr['correlation']:.3f} ({corr['strength']})")
+                detailed.append(f"   방향: {corr['direction']}")
+                detailed.append("")
+
+        # 범주형 조합 결과
+        if "categorical_combinations" in results and "error" not in results["categorical_combinations"]:
+            cat_results = results["categorical_combinations"]
+            detailed.extend([
+                "📊 범주형 컬럼 연관성 분석:", 
+                "-" * 30
+            ])
+            
+            for idx, assoc in enumerate(cat_results.get("associations", [])[:5], 1):
+                detailed.append(f"{idx}. {assoc['column1']} ↔ {assoc['column2']}")
+                detailed.append(f"   Cramér's V: {assoc['cramers_v']:.3f} ({assoc['association_strength']})")
+                detailed.append(f"   유의성: {'유의함' if assoc['significant'] else '유의하지 않음'}")
+                detailed.append("")
+
+        # 혼합형 조합 결과
+        if "mixed_combinations" in results and "error" not in results["mixed_combinations"]:
+            mixed_results = results["mixed_combinations"]
+            detailed.extend([
+                "🔀 혼합형 분석 (수치형 vs 범주형):", 
+                "-" * 30
+            ])
+            
+            for idx, anova in enumerate(mixed_results.get("anova_results", [])[:5], 1):
+                detailed.append(f"{idx}. {anova['numerical_column']} vs {anova['categorical_column']}")
+                detailed.append(f"   F-통계량: {anova['f_statistic']:.3f}")
+                detailed.append(f"   효과 크기: {anova['eta_squared']:.3f} ({anova['effect_size']})")
+                detailed.append(f"   유의성: {'유의함' if anova['significant'] else '유의하지 않음'}")
+                detailed.append("")
+
+        return "\n".join(detailed)
 
     def build_preview_tab(self):
         """데이터 미리보기 탭"""
@@ -1306,6 +1859,102 @@ class CSVAnalyzerApp:
                 
         except Exception as e:
             self.show_toast(f"Export failed: {e}", "error")
+
+    def display_data_paginated(self, df: pd.DataFrame, page: int = 0, page_size: int = 1000):
+        """페이지네이션으로 대용량 데이터 효율적 표시"""
+        if df is None or df.empty:
+            return
+        
+        start_idx = page * page_size
+        end_idx = min(start_idx + page_size, len(df))
+        
+        # 현재 페이지 데이터만 표시
+        page_data = df.iloc[start_idx:end_idx]
+        
+        # 캐시 키 생성
+        cache_key = f"page_{page}_{page_size}_{hash(str(df.columns.tolist()))}"
+        cached_data = self.data_cache.get(cache_key)
+        
+        if cached_data is not None:
+            # 캐시된 데이터 사용
+            display_data = cached_data
+        else:
+            # 새로 처리 및 캐시에 저장
+            display_data = page_data.copy()
+            self.data_cache.set(cache_key, display_data)
+        
+        # Treeview 업데이트 (기존 데이터 클리어 후 추가)
+        if hasattr(self, 'preview_tree'):
+            for item in self.preview_tree.get_children():
+                self.preview_tree.delete(item)
+            
+            # 컬럼 헤더 설정 (최초 1회만)
+            if not self.preview_tree.get_children():
+                self.preview_tree['columns'] = list(display_data.columns)
+                for col in display_data.columns:
+                    self.preview_tree.heading(col, text=col)
+                    self.preview_tree.column(col, width=min(150, len(str(col)) * 10))
+            
+            # 데이터 행 추가 (최적화된 방식)
+            for idx, row in display_data.iterrows():
+                values = []
+                for val in row:
+                    if isinstance(val, float):
+                        values.append(f"{val:.2f}")
+                    elif pd.isna(val):
+                        values.append("")
+                    else:
+                        values.append(str(val))
+                self.preview_tree.insert('', 'end', values=values)
+            
+            # 페이지 정보 업데이트
+            if hasattr(self, 'row_count_label'):
+                total_rows = len(df)
+                self.row_count_label.config(
+                    text=f"Rows: {start_idx + 1}-{end_idx} of {total_rows:,}"
+                )
+
+    def animate_spinner_optimized(self):
+        """최적화된 스피너 애니메이션"""
+        if not hasattr(self, '_spinner_active'):
+            self._spinner_active = False
+        
+        if not self._spinner_active:
+            return
+        
+        if hasattr(self, 'spinner_label') and self.spinner_label.winfo_exists():
+            current = self.spinner_label.cget('text')
+            # 더 부드러운 애니메이션 패턴
+            patterns = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+            current_idx = patterns.index(current) if current in patterns else 0
+            next_pattern = patterns[(current_idx + 1) % len(patterns)]
+            self.spinner_label.config(text=next_pattern)
+        
+        # 100ms 간격으로 최적화 (기존 50ms에서 증가)
+        self.root.after(100, self.animate_spinner_optimized)
+
+    def start_spinner(self):
+        """스피너 시작"""
+        self._spinner_active = True
+        if hasattr(self, 'spinner_label'):
+            self.spinner_label.config(text='⠋')
+        self.animate_spinner_optimized()
+
+    def stop_spinner(self):
+        """스피너 정지"""
+        self._spinner_active = False
+        if hasattr(self, 'spinner_label'):
+            self.spinner_label.config(text='')
+
+    def show_toast(self, message: str, kind: str = "info"):
+        """토스트 메시지 표시"""
+        # 간단한 메시지 박스로 대체
+        if kind == "error":
+            messagebox.showerror("Error", message)
+        elif kind == "success" or kind == "ok":
+            messagebox.showinfo("Success", message)
+        else:
+            messagebox.showinfo("Info", message)
 
 def main():
     root = tk.Tk()

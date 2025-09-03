@@ -5,6 +5,7 @@ Advanced tools for exploring, slicing, and visualizing large CSV files with ML-p
 ## Features
 
 ### Core Analysis
+
 - Modular architecture (`app.py`, `ui.py`, `data_loader.py`, `analysis.py`, `visualization.py`, `utils.py`, `combinations.py`)
 - Extended statistics: median, IQR, skewness, kurtosis, and missing percentages
 - Pagination to preview large tables page by page (up to 1000 rows)
@@ -12,6 +13,7 @@ Advanced tools for exploring, slicing, and visualizing large CSV files with ML-p
 - Advanced combinations analysis for discovering relationships between columns
 
 ### Visualization & UI
+
 - Modern Tkinter-based GUI with dark/light theme switching
 - Histogram, box, scatter, line, ECDF, heatmap, and correlation plots
 - In-memory rendering pipeline for Matplotlib figures
@@ -19,6 +21,7 @@ Advanced tools for exploring, slicing, and visualizing large CSV files with ML-p
 - Export utilities for saving dataframes and analysis reports
 
 ### ML-Powered DSL Analysis
+
 - Domain Specific Language (DSL) for automated analysis workflows
 - PyTorch-based LSTM model for intelligent code generation
 - CLI support via `main_cli.py` for DSL-based analysis
@@ -31,6 +34,7 @@ pip install -r requirements.txt
 ```
 
 ### Requirements
+
 - Python 3.8+
 - pandas >= 2.0.0
 - tkinter (usually included with Python)
@@ -42,6 +46,7 @@ pip install -r requirements.txt
 ## Usage
 
 ### GUI Application
+
 Launch the modern Tkinter-based interface with theme switching:
 
 ```bash
@@ -49,22 +54,60 @@ python app.py
 ```
 
 Features:
-- Dark/Light theme toggle
-- Interactive data preview and filtering
-- Advanced statistical analysis
-- Multiple visualization types
-- Export capabilities for data and reports
 
-### DSL Command Line Analysis
-Use the intelligent DSL system for automated analysis:
+- **Dark/Light theme toggle**: 사용자 환경에 맞는 테마 선택
+- **Interactive data preview and filtering**: 대화형 데이터 미리보기 및 필터링
+- **Advanced statistical analysis**: 고급 통계 분석 도구
+- **Combinations Analysis**: 컬럼 간 관계 분석 (상관관계, 연관규칙, ANOVA)
+- **Multiple visualization types**: 다양한 시각화 차트
+- **Export capabilities**: 데이터 및 보고서 내보내기
+
+#### Combinations Analysis 탭 사용법
+
+1. **데이터 로드**: 먼저 CSV 파일을 로드합니다
+2. **DSL 토큰 입력** (선택사항): 특정 컬럼만 분석하려면 토큰 입력 (예: C1,C2,C3)
+3. **상위 결과 수 설정**: 표시할 결과의 개수 설정
+4. **분석 실행**: '분석 실행' 버튼 클릭
+5. **결과 확인**: 상관관계, 연관성, ANOVA 결과를 확인
+
+### DSL Command Line Analysis (확장된 기능)
+
+강력한 ML 기반 DSL 자동 분석 도구:
 
 ```bash
+# 기본 대화형 모드
 python main_cli.py
+
+# 토큰 직접 지정
+python main_cli.py --tokens C1,C2,C6 --file data.csv
+
+# 대화형 모드 (파일 지정)
+python main_cli.py --file data.csv --interactive
+
+# 사용 가능한 토큰 목록 보기
+python main_cli.py --help-tokens
+
+# 출력 파일 지정
+python main_cli.py --tokens C2,C1,C6 --output my_analysis.py
 ```
 
-Enter DSL tokens (e.g., `C1 C2 C6`) to generate analysis code automatically. The ML model will predict the optimal analysis sequence and generate executable Python code.
+#### 주요 기능
+
+- **ML 예측**: LSTM 모델이 최적 분석 시퀀스 예측
+- **50+ 토큰**: C1~C50 + 특수 토큰 (SAVE, EXPORT, PROFILE)
+- **템플릿 분석**: 기본, 통계, 시각화, 상관관계 등 미리 정의된 분석 패턴
+- **스마트 코드 생성**: 실행 가능한 Python 코드 자동 생성
+- **오류 처리**: 각 분석 단계별 예외 처리 포함
+
+#### 분석 템플릿
+
+- `basic`: C2, C15, C6, C3, C1 (기본 데이터 탐색)
+- `statistical`: C1, C14, C29, C41, C42, C43 (고급 통계)
+- `visualization`: C12, C23, C35, C47 (다양한 시각화)
+- `correlation`: C8, C12, C25, C50 (상관관계 분석)
 
 ### Classic Command Line
+
 ```bash
 python main_cli.py --help
 ```
@@ -74,6 +117,7 @@ python main_cli.py --help
 The project includes an innovative ML-powered DSL system for automated data analysis:
 
 ### DSL Tokens
+
 - `C1`: `df.describe()` - Statistical summary
 - `C2`: `df.info()` - DataFrame information
 - `C3`: `df.isnull().sum()` - Missing values count
@@ -86,6 +130,7 @@ The project includes an innovative ML-powered DSL system for automated data anal
 - `C10`: `df.memory_usage()` - Memory usage
 
 ### How it Works
+
 1. Input DSL tokens in the CLI interface
 2. PyTorch LSTM model predicts optimal analysis sequence
 3. Generated Python code is saved to `generated_analysis.py`
@@ -93,27 +138,36 @@ The project includes an innovative ML-powered DSL system for automated data anal
 
 ## Build Executable
 
-### Automated Build (Recommended)
-```batch
-# Windows
-build_new.bat
+### Quick Build (Recommended)
 
-# Choose option 2 for optimized build (faster, smaller size)
+```bash
+# 표준 빌드 (빠름, 모든 기능 포함)
+python build.py
+
+# 최적화 빌드 (느림, 파일 크기 작음)
+python build.py --optimized
+
+# 빌드 파일 정리
+python build.py --clean
 ```
 
-### Manual Build
+실행 파일은 `dist/` 폴더에 생성됩니다:
+
+- Windows: `CSV-Analyzer.exe`
+- Linux/macOS: `CSV-Analyzer`
+
+### Manual Build (Advanced)
+
 ```bash
-# Install PyInstaller
+# PyInstaller 설치
 pip install pyinstaller
 
-# Optimized build
-python build_optimized.py
-
-# Or use the basic build script
+# 표준 빌드
 python build.py
-```
 
-The executable will be created in the `dist/` folder as `CSV-Analyzer.exe`.
+# 최적화 빌드
+python build.py --optimized
+```
 
 ## Notes
 
@@ -127,9 +181,10 @@ The executable will be created in the `dist/` folder as `CSV-Analyzer.exe`.
 
 SCV Analysis Slicer는 ML 기반 분석 기능을 갖춘 대규모 CSV 파일 탐색, 슬라이싱 및 시각화 도구입니다. 현대적인 Tkinter 기반 GUI와 지능형 DSL 명령줄 분석을 제공합니다.
 
-### 주요 기능
+### 주요 기능 (한국어)
 
 #### 핵심 분석
+
 - 모듈형 구조 (`app.py`, `ui.py`, `data_loader.py`, `analysis.py`, `visualization.py`, `utils.py`, `combinations.py`)
 - 중앙값, IQR, 왜도, 첨도, 결측 비율 등의 확장 통계
 - 대규모 테이블을 페이지 단위로 미리보기 (최대 1000행)
@@ -137,6 +192,7 @@ SCV Analysis Slicer는 ML 기반 분석 기능을 갖춘 대규모 CSV 파일 �
 - 컬럼 간 관계 발견을 위한 고급 조합 분석
 
 #### 시각화 및 UI
+
 - 다크/라이트 테마 전환이 가능한 현대적인 Tkinter 기반 GUI
 - 히스토그램, 박스, 산점도, 선, ECDF, 히트맵, 상관관계 플롯
 - Matplotlib 그림을 위한 인메모리 렌더링 파이프라인
@@ -144,6 +200,7 @@ SCV Analysis Slicer는 ML 기반 분석 기능을 갖춘 대규모 CSV 파일 �
 - 데이터프레임 및 분석 보고서 저장을 위한 내보내기 유틸리티
 
 #### ML 기반 DSL 분석
+
 - 자동화된 분석 워크플로우를 위한 도메인 특화 언어(DSL)
 - 지능형 코드 생성을 위한 PyTorch 기반 LSTM 모델
 - DSL 기반 분석을 위한 `main_cli.py`를 통한 CLI 지원
@@ -156,6 +213,7 @@ pip install -r requirements.txt
 ```
 
 ### 요구사항
+
 - Python 3.8+
 - pandas >= 2.0.0
 - tkinter (보통 Python과 함께 포함됨)
@@ -167,6 +225,7 @@ pip install -r requirements.txt
 ### 사용법
 
 #### GUI 애플리케이션
+
 테마 전환 기능이 있는 현대적인 Tkinter 기반 인터페이스 실행:
 
 ```bash
@@ -174,6 +233,7 @@ python app.py
 ```
 
 기능:
+
 - 다크/라이트 테마 토글
 - 대화형 데이터 미리보기 및 필터링
 - 고급 통계 분석
@@ -181,6 +241,7 @@ python app.py
 - 데이터 및 보고서 내보내기 기능
 
 #### DSL 명령줄 분석
+
 자동화된 분석을 위한 지능형 DSL 시스템 사용:
 
 ```bash
@@ -195,58 +256,104 @@ DSL 토큰(예: `C1 C2 C6`)을 입력하여 분석 코드를 자동으로 생성
 python main_cli.py --help
 ```
 
-### DSL (도메인 특화 언어) 시스템
+### Advanced Combinations Analysis (고급 조합 분석)
 
-프로젝트에는 자동화된 데이터 분석을 위한 혁신적인 ML 기반 DSL 시스템이 포함되어 있습니다:
+프로젝트의 핵심 기능인 `combinations.py`는 데이터 컬럼 간의 관계를 자동으로 분석합니다:
 
-#### DSL 토큰
-- `C1`: `df.describe()` - 통계 요약
-- `C2`: `df.info()` - 데이터프레임 정보
-- `C3`: `df.isnull().sum()` - 결측값 개수
-- `C4`: `df.dtypes` - 데이터 타입
-- `C5`: `df.nunique()` - 고유값 개수
-- `C6`: `df.head()` - 처음 몇 행
-- `C7`: `df.tail()` - 마지막 몇 행
-- `C8`: `df.corr()` - 상관관계 행렬
-- `C9`: `df.columns` - 컬럼 이름
-- `C10`: `df.memory_usage()` - 메모리 사용량
+#### 🚀 새로운 고급 기능들
 
-#### 작동 방식
-1. CLI 인터페이스에서 DSL 토큰 입력
-2. PyTorch LSTM 모델이 최적의 분석 시퀀스 예측
-3. 생성된 Python 코드를 `generated_analysis.py`에 저장
-4. 자동화된 분석을 위해 코드 실행
+- **병렬 처리**: ThreadPoolExecutor를 통한 고성능 분석
+- **메모리 최적화**: 데이터 타입 자동 최적화 및 메모리 사용량 모니터링
+- **캐싱 시스템**: 분석 결과 자동 캐싱으로 반복 분석 속도 향상
+- **텍스트 분석**: 텍스트 컬럼의 통계적 분석
+- **실시간 모니터링**: 성능 메트릭 수집 및 분석
+- **시각화 추천**: 분석 결과를 바탕으로 적절한 차트 자동 추천
 
-### Windows 실행파일 빌드
+#### 📊 분석 기능
 
-#### 자동 빌드 스크립트 사용 (권장)
+- **수치형 × 수치형**: Pearson, Spearman, Kendall 상관계수 + 신뢰성 평가
+- **범주형 × 범주형**: Lift 분석 (연관규칙 마이닝)
+- **범주형 × 수치형**: ANOVA 기반 분산분석 + 그룹별 통계
+- **텍스트 분석**: 단어 빈도 분석 및 텍스트 통계
 
-```batch
-build_new.bat
+#### 🛠️ 사용 방법
+
+**기본 사용:**
+
+```python
+from combinations import AdvancedCombinationsAnalyzer, AnalysisConfig
+
+config = AnalysisConfig(
+    max_cardinality=50,
+    top_k=20,
+    correlation_threshold=0.3,
+    parallel_processing=True
+)
+
+analyzer = AdvancedCombinationsAnalyzer(config)
+results = analyzer.analyze_combinations_advanced(df)
 ```
 
-최적화된 빌드를 위해 옵션 2를 선택하세요 (더 빠르고 작은 크기).
-
-#### 수동 빌드
+**통합 CLI 도구:**
 
 ```bash
-# PyInstaller 설치
-pip install pyinstaller
+# 기본 사용법
+python combinations.py --file data.csv --output results.json
 
-# 최적화된 빌드
-python build_optimized.py
+# DSL 토큰을 사용한 분석
+python combinations.py --file data.csv --dsl-tokens C1,C2,C3 --verbose
 
-# 또는 기본 빌드 스크립트 사용
-python build.py
+# 설정 파일 사용
+python combinations.py --file data.csv --config analysis_config.json
+
+# 고급 옵션
+python combinations.py --file data.csv --max-cardinality 30 --top-k 15 --no-cache
 ```
 
-실행파일은 `dist/` 폴더에 `CSV-Analyzer.exe`로 생성됩니다.
+**Python 모듈로 사용:**
 
-### 참고 사항
+```python
+from combinations import AdvancedCombinationsAnalyzer, AnalysisConfig
 
-- 글꼴 로딩은 Windows/macOS/Linux 환경에서 최선을 다하며, 찾지 못하면 시스템 기본 글꼴이 사용됩니다.
-- 매우 큰 CSV 파일의 경우, 최적의 메모리 사용을 위해 `data_loader.load_csv` 함수에 `dtype` 맵을 명시적으로 제공하는 것이 좋습니다.
-- DSL 기능을 위해 ML 모델(`model.pt`)과 토크나이저(`dsl_tokenizer.json`)가 포함되어 있습니다.
-- PyTorch 및 기타 종속성으로 인해 실행파일 빌드 크기가 클 수 있습니다(약 200MB).
-- 테마 전환 기능은 사용자 기본 설정을 유지하고 부드러운 전환을 제공합니다.
+# 기본 분석
+analyzer = AdvancedCombinationsAnalyzer()
+results = analyzer.analyze_all_combinations(df)
 
+# 설정 사용자 정의
+config = AnalysisConfig(max_cardinality=30, top_k=15, parallel_processing=True)
+analyzer = AdvancedCombinationsAnalyzer(config)
+results = analyzer.analyze_all_combinations(df, dsl_tokens=['C1', 'C2'])
+
+# 결과 요약 출력
+print(analyzer.get_analysis_summary(results))
+```
+
+## 내장 기능
+
+### 성능 최적화
+
+- 메모리 최적화: 데이터프레임 타입 다운캐스팅으로 메모리 사용량 감소
+- 캐싱 시스템: 분석 결과 자동 캐싱으로 반복 분석 속도 향상
+- 병렬 처리: 대용량 데이터 분석 시 멀티프로세싱 지원
+
+### 분석 유형
+
+- **수치형 분석**: 상관관계 분석, 피어슨 상관계수
+- **범주형 분석**: Cramér's V, 카이제곱 검정, 연관규칙
+- **혼합형 분석**: ANOVA, 효과 크기 (eta-squared)
+
+### 출력 형식
+
+- JSON 결과 파일 저장
+- 콘솔 요약 출력
+- 성능 메트릭 포함
+
+## 참고 사항
+
+- **프로젝트 구조**: 모든 combinations 관련 기능이 `combinations.py` 하나의 파일에 통합되어 있습니다.
+- **빌드 호환성**: Windows .exe 실행파일로 빌드 가능하며, GUI 중심 설계로 실용성을 고려했습니다.
+- **성능 최적화**: 대용량 데이터 처리를 위한 메모리 최적화 및 캐싱 시스템이 내장되어 있습니다.
+- **선택적 의존성**: scipy, psutil 등은 선택사항이며, 없어도 기본 기능은 동작합니다.
+- **글꼴 로딩**: Windows/macOS/Linux 환경에서 최선을 다하며, 찾지 못하면 시스템 기본 글꼴이 사용됩니다.
+- **DSL 기능**: ML 모델(`model.pt`)과 토크나이저(`dsl_tokenizer.json`)가 포함되어 있습니다.
+- **테마 전환**: 사용자 기본 설정을 유지하고 부드러운 전환을 제공합니다.
