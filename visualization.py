@@ -394,10 +394,17 @@ def plot_time_series_decomposition(df: pd.DataFrame, date_col: str, value_col: s
         
         # 4. Autocorrelation (simplified)
         if len(ts_data) > 20:
-            lags = range(1, min(21, len(ts_data)//2))
-            autocorrs = [ts_data.autocorr(lag=lag) for lag in lags]
-            axes[1, 1].bar(lags, autocorrs, alpha=0.7, color='#B19CD9')
-            axes[1, 1].axhline(y=0, color='white', linestyle='-', alpha=0.3)
+            # Limit autocorrelation computation for very large time series
+            if len(ts_data) > 5000:
+                axes[1, 1].text(0.5, 0.5, "Autocorrelation skipped for large time series", ha="center", va="center", fontsize=9)
+            else:
+                lags = range(1, min(21, len(ts_data)//2))
+                try:
+                    autocorrs = [ts_data.autocorr(lag=lag) for lag in lags]
+                    axes[1, 1].bar(lags, autocorrs, alpha=0.7, color='#B19CD9')
+                    axes[1, 1].axhline(y=0, color='white', linestyle='-', alpha=0.3)
+                except Exception as acorr_err:
+                    axes[1, 1].text(0.5, 0.5, f"Autocorrelation error:\n{acorr_err}", ha="center", va="center", fontsize=9)
         axes[1, 1].set_title("Autocorrelation", fontsize=10)
         axes[1, 1].set_facecolor("#1a1a1a")
         
