@@ -53,7 +53,10 @@ if %ERRORLEVEL% EQU 0 (
     
     if exist "dist\CSV-Analyzer.exe" (
         echo 파일 크기:
-        for %%I in (dist\CSV-Analyzer.exe) do echo    %%~zI bytes (%%~zI ÷ 1024 ÷ 1024 MB)
+        for %%I in (dist\CSV-Analyzer.exe) do (
+            set /a "MB=%%~zI/1024/1024"
+            echo    %%~zI bytes (%MB% MB)
+        )
         echo.
         echo ✅ 단일 인스턴스 기능이 포함된 실행 파일이 생성되었습니다.
         echo 📌 EXE를 여러 번 실행해도 하나의 창만 열립니다.
