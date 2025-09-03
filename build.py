@@ -3,7 +3,6 @@
 CSV Analyzer 빌드 스크립트
 PyInstaller를 사용하여 Windows 실행 파일(.exe)을 생성합니다.
 """
-
 import os
 import sys
 import shutil
@@ -41,7 +40,6 @@ def build_executable():
     """실행 파일 빌드"""
     print("🔨 CSV Analyzer 단일 인스턴스 실행 파일 빌드 중...")
     print("   (이 과정은 수 분이 소요될 수 있습니다...)")
-    
     # PyInstaller 명령어 구성
     cmd = [
         sys.executable, '-m', 'PyInstaller',
