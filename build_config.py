@@ -21,7 +21,10 @@ a = Analysis(
         'matplotlib.patches',
         'threading',
         'pathlib',
-        'io'
+        'io',
+        'single_instance',  # 단일 인스턴스 모듈 포함
+        'ctypes',  # Windows 뮤텍스용
+        'ctypes.wintypes'  # Windows API용
     ],
     hookspath=[],
     hooksconfig={},

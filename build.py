@@ -15,7 +15,7 @@ def cleanup_build_files():
     print("🧹 이전 빌드 파일 정리 중...")
     
     dirs_to_remove = ['build', 'dist', '__pycache__']
-    files_to_remove = ['*.spec']
+    files_to_remove = ['*.spec']  # 우리가 만든 csv_analyzer.spec는 제외
     
     for dir_name in dirs_to_remove:
         if os.path.exists(dir_name):
@@ -25,12 +25,14 @@ def cleanup_build_files():
     import glob
     for pattern in files_to_remove:
         for file in glob.glob(pattern):
-            os.remove(file)
-            print(f"   ✓ {file} 파일 제거")
+            # csv_analyzer.spec는 제외하고 삭제
+            if file != 'csv_analyzer.spec':
+                os.remove(file)
+                print(f"   ✓ {file} 파일 제거")
 
 def build_executable():
     """실행 파일 빌드"""
-    print("🔨 CSV Analyzer 실행 파일 빌드 중...")
+    print("🔨 CSV Analyzer 단일 인스턴스 실행 파일 빌드 중...")
     print("   (이 과정은 수 분이 소요될 수 있습니다...)")
     
     # PyInstaller 명령어 구성
@@ -50,6 +52,11 @@ def build_executable():
         '--exclude-module=wx',
         '--exclude-module=test',
         '--exclude-module=unittest',
+        
+        # 단일 인스턴스 모듈 포함
+        '--hidden-import=single_instance',
+        '--hidden-import=ctypes',
+        '--hidden-import=ctypes.wintypes',
         
         # 최적화 옵션
         '--optimize=2',                 # 바이트코드 최적화
@@ -73,14 +80,20 @@ def check_result():
     
     if exe_path.exists():
         size_mb = exe_path.stat().st_size / (1024 * 1024)
-        print(f"\n🎉 빌드 성공!")
+        print(f"\n🎉 단일 인스턴스 빌드 성공!")
         print(f"📁 생성된 파일: {exe_path}")
         print(f"📏 파일 크기: {size_mb:.1f} MB")
+        print(f"🔒 단일 인스턴스 기능: 포함됨")
+        print(f"📌 EXE를 여러 번 실행해도 하나의 창만 열립니다.")
         
         # 실행 테스트 옵션
         choice = input("\n🚀 빌드된 실행 파일을 지금 테스트하시겠습니까? (y/n): ")
         if choice.lower() in ['y', 'yes']:
-            os.startfile(str(exe_path))
+            print("💡 단일 인스턴스 테스트: 실행 후 동일한 EXE를 다시 실행해보세요!")
+            try:
+                os.startfile(str(exe_path))
+            except AttributeError:
+                print("   (Windows가 아닌 환경에서는 자동 실행을 지원하지 않습니다)")
         
         return True
     else:
@@ -89,9 +102,9 @@ def check_result():
 
 def main():
     """메인 함수"""
-    print("=" * 50)
-    print("       🔧 CSV Analyzer 빌드 도구 🔧")
-    print("=" * 50)
+    print("=" * 60)
+    print("       🔧 CSV Analyzer 단일 인스턴스 빌드 도구 🔧")
+    print("=" * 60)
     
     # 현재 디렉토리 확인
     if not Path('app.py').exists():
@@ -99,7 +112,25 @@ def main():
         print("   이 스크립트를 app.py가 있는 폴더에서 실행하세요.")
         return False
     
+    # 단일 인스턴스 모듈 확인
+    if not Path('single_instance.py').exists():
+        print("❌ single_instance.py 파일을 찾을 수 없습니다.")
+        print("   단일 인스턴스 모듈이 필요합니다.")
+        return False
+    
     try:
+        # 0. 단일 인스턴스 기능 테스트
+        print("🧪 단일 인스턴스 기능 테스트 중...")
+        result = subprocess.run([sys.executable, 'test_single_instance.py'], 
+                              capture_output=True, text=True)
+        if result.returncode != 0:
+            print("❌ 단일 인스턴스 테스트 실패!")
+            print(result.stdout)
+            print(result.stderr)
+            return False
+        print("✅ 단일 인스턴스 기능 테스트 통과")
+        print()
+        
         # 1. 정리
         cleanup_build_files()
         print()

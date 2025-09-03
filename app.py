@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.patches as mpatches
 import numpy as np
+from single_instance import check_single_instance
 
 class AppState:
     def __init__(self):
@@ -1308,17 +1309,36 @@ class CSVAnalyzerApp:
             self.show_toast(f"Export failed: {e}", "error")
 
 def main():
-    root = tk.Tk()
-    app = CSVAnalyzerApp(root)
+    # 단일 인스턴스 체크
+    instance_manager = check_single_instance("CSV-Analyzer")
+    if not instance_manager:
+        # 이미 다른 인스턴스가 실행 중
+        return
     
-    # 윈도우 닫기 이벤트
-    def on_closing():
-        if app.busy_after_id:
-            root.after_cancel(app.busy_after_id)
-        root.destroy()
-    
-    root.protocol("WM_DELETE_WINDOW", on_closing)
-    root.mainloop()
+    try:
+        root = tk.Tk()
+        app = CSVAnalyzerApp(root)
+        
+        # 단일 인스턴스 매니저에 메인 윈도우 등록
+        instance_manager.register_main_window(root)
+        
+        # 윈도우 닫기 이벤트
+        def on_closing():
+            if app.busy_after_id:
+                root.after_cancel(app.busy_after_id)
+            instance_manager.cleanup()  # 리소스 정리
+            root.destroy()
+        
+        root.protocol("WM_DELETE_WINDOW", on_closing)
+        root.mainloop()
+        
+    except Exception as e:
+        print(f"Application error: {e}")
+        instance_manager.cleanup()
+    finally:
+        # 확실한 리소스 정리
+        if instance_manager:
+            instance_manager.cleanup()
 
 if __name__ == "__main__":
     main()
