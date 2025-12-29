@@ -91,9 +91,9 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
     # 파일 로딩 및 기본 확인
     lines.extend([
         "# 데이터 로딩",
-        f"print('📂 데이터 로딩: {csv_path}')",
+        f"print(' 데이터 로딩: {csv_path}')",
         f"df = pd.read_csv({repr(csv_path)})",
-        f"print(f'✅ 데이터 로드 완료: {{len(df):,}}행 × {{len(df.columns)}}열')",
+        f"print(f' 데이터 로드 완료: {{len(df):,}}행 × {{len(df.columns)}}열')",
         ""
     ])
     
@@ -108,14 +108,14 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
                 f"    result_{i} = {code_line}",
                 f"    print(result_{i})",
                 "except Exception as e:",
-                f"    print(f'❌ {token} 분석 중 오류: {{e}}')",
+                f"    print(f' {token} 분석 중 오류: {{e}}')",
                 ""
             ])
     
     # 푸터 추가
     lines.extend([
-        "print('\\n🎉 모든 분석이 완료되었습니다!')",
-        f"print('📊 총 {len(dsl_sequence)}개의 분석을 수행했습니다.')"
+        "print('\\n 모든 분석이 완료되었습니다!')",
+        f"print(' 총 {len(dsl_sequence)}개의 분석을 수행했습니다.')"
     ])
     
     return "\n".join(lines)
