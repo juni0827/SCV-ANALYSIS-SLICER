@@ -30,6 +30,7 @@ Thumbs.db
 # 임시 파일
 *.tmp
 *.temp
+*.old
 
 # PyInstaller 임시 파일
 *.toc
@@ -44,3 +45,6 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Analysis cache
+.analysis_cache
