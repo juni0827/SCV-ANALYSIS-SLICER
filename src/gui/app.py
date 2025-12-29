@@ -37,6 +37,8 @@ def column_profile(df: pd.DataFrame, column: str) -> dict:
         "Min": str(df[column].min()) if df[column].dtype in ['int64', 'float64'] else "N/A",
         "Max": str(df[column].max()) if df[column].dtype in ['int64', 'float64'] else "N/A",
         "Mean": f"{df[column].mean():.2f}" if df[column].dtype in ['int64', 'float64'] else "N/A"
+    }
+
 
 class CSVAnalyzerApp:
     def __init__(self, root):
@@ -973,67 +975,73 @@ class CSVAnalyzerApp:
         self.combinations_result_text.config(state=tk.DISABLED)
 
     def run_combinations_analysis(self):
-        """조합 분석 실행"""
+        """조합 분석 실행 (백그라운드 스레드 사용)"""
         if self.state.df is None:
             self.show_toast("데이터를 먼저 로드해주세요", "error")
             return
 
+        # 분석 중 상태 표시
+        self.run_combinations_btn.config(text="분석 중...", state="disabled")
+        self.combinations_result_text.config(state=tk.NORMAL)
+        self.combinations_result_text.delete(1.0, tk.END)
+        self.combinations_result_text.insert(1.0, "🔄 분석을 실행 중입니다...\n")
+        self.combinations_result_text.config(state=tk.DISABLED)
+        self.root.update()
+
+        # DSL 토큰 파싱
+        dsl_tokens = None
+        if self.dsl_tokens_entry.get().strip():
+            dsl_tokens = [token.strip() for token in self.dsl_tokens_entry.get().split(',')]
+
         try:
-            # 분석 중 상태 표시
-            self.run_combinations_btn.config(text="분석 중...", state="disabled")
-            self.combinations_result_text.config(state=tk.NORMAL)
-            self.combinations_result_text.delete(1.0, tk.END)
-            self.combinations_result_text.insert(1.0, "🔄 분석을 실행 중입니다...\n")
-            self.combinations_result_text.config(state=tk.DISABLED)
-            self.root.update()
+            top_k = int(self.topk_var.get())
+        except ValueError:
+            top_k = 10
 
-            # DSL 토큰 파싱
-            dsl_tokens = None
-            if self.dsl_tokens_entry.get().strip():
-                dsl_tokens = [token.strip() for token in self.dsl_tokens_entry.get().split(',')]
-
-            # 분석 설정
-            from combinations import AdvancedCombinationsAnalyzer, AnalysisConfig
+        # 백그라운드 스레드에서 실행될 함수
+        def run_analysis():
+            from src.core.combinations import AdvancedCombinationsAnalyzer, AnalysisConfig
             
-            try:
-                top_k = int(self.topk_var.get())
-            except ValueError:
-                top_k = 10
-
             config = AnalysisConfig(
                 top_k=top_k,
-                parallel_processing=False,  # GUI에서는 단일 스레드 사용
+                parallel_processing=True,  # 백그라운드에서 병렬 처리 사용
                 enable_caching=True
             )
 
             # 분석 실행
             analyzer = AdvancedCombinationsAnalyzer(config)
             results = analyzer.analyze_all_combinations(self.state.df, dsl_tokens)
-
-            # 결과 표시
+            
+            # 결과 포맷팅
             summary = analyzer.get_analysis_summary(results)
             detailed_results = self.format_detailed_results(results)
-
-            # 텍스트 위젯에 결과 표시
-            self.combinations_result_text.config(state=tk.NORMAL)
-            self.combinations_result_text.delete(1.0, tk.END)
-            self.combinations_result_text.insert(1.0, summary + "\n\n" + detailed_results)
-            self.combinations_result_text.config(state=tk.DISABLED)
-
-            # 성공 토스트
-            self.show_toast("분석이 완료되었습니다", "success")
-
-        except Exception as e:
-            # 오류 처리
-            self.combinations_result_text.config(state=tk.NORMAL)
-            self.combinations_result_text.delete(1.0, tk.END)
-            self.combinations_result_text.insert(1.0, f"❌ 분석 중 오류가 발생했습니다:\n\n{str(e)}")
-            self.combinations_result_text.config(state=tk.DISABLED)
-            self.show_toast(f"분석 실패: {str(e)}", "error")
-
-        finally:
-            # 버튼 상태 복원
-            self.run_combinations_btn.config(text="분석 실행", state="normal")
+            
+            return (summary, detailed_results)
+        
+        # 완료 콜백
+        def on_complete(result):
+            try:
+                if result.success:
+                    summary, detailed = result.data
+                    # 텍스트 위젯에 결과 표시
+                    self.combinations_result_text.config(state=tk.NORMAL)
+                    self.combinations_result_text.delete(1.0, tk.END)
+                    self.combinations_result_text.insert(1.0, summary + "\n\n" + detailed)
+                    self.combinations_result_text.config(state=tk.DISABLED)
+                    self.show_toast("분석이 완료되었습니다", "ok")
+                else:
+                    # 오류 처리
+                    self.combinations_result_text.config(state=tk.NORMAL)
+                    self.combinations_result_text.delete(1.0, tk.END)
+                    self.combinations_result_text.insert(1.0, f"❌ 분석 중 오류가 발생했습니다:\n\n{result.error}")
+                    self.combinations_result_text.config(state=tk.DISABLED)
+                    self.show_toast(f"분석 실패: {result.error}", "error")
+            finally:
+                # 버튼 상태 복원
+                self.run_combinations_btn.config(text="분석 실행", state="normal")
+        
+        # 백그라운드 태스크 실행
+        self.task_manager.run_task(run_analysis, on_complete)
 
     def format_detailed_results(self, results):
         """상세 결과 포맷팅"""
