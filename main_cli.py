@@ -36,7 +36,7 @@ class DSLAnalyzer:
     def show_help(self):
         """DSL 토큰 도움말 표시"""
         print("=" * 60)
-        print("📋 사용 가능한 DSL 토큰")
+        print(" 사용 가능한 DSL 토큰")
         print("=" * 60)
         
         categories = {
@@ -53,29 +53,29 @@ class DSLAnalyzer:
         from src.dsl.dsl2code import token_code_map
         
         for category, tokens in categories.items():
-            print(f"\n🔸 {category}:")
+            print(f"\n {category}:")
             for token in tokens:
                 if token in token_code_map:
                     description = token_code_map[token][:50] + "..." if len(token_code_map[token]) > 50 else token_code_map[token]
                     print(f"  {token}: {description}")
         
-        print("\n💡 예시 사용법:")
+        print("\n 예시 사용법:")
         print("  C2 C1 C6    # 기본 정보 + 미리보기")
         print("  C3 C11 C21  # 결측치 전체 분석")
         print("  C8 C12 C25  # 상관관계 분석")
     
     def interactive_mode(self):
         """대화형 모드"""
-        print("🤖 DSL 대화형 분석 모드")
+        print(" DSL 대화형 분석 모드")
         print("도움말을 보려면 'help'를 입력하세요.")
         print("종료하려면 'quit' 또는 'exit'를 입력하세요.")
         
         while True:
             try:
-                raw = input("\n📝 DSL 토큰 입력 (예: C2 C1 C6): ").strip()
+                raw = input("\n DSL 토큰 입력 (예: C2 C1 C6): ").strip()
                 
                 if raw.lower() in ['quit', 'exit', 'q']:
-                    print("👋 DSL 분석기를 종료합니다.")
+                    print(" DSL 분석기를 종료합니다.")
                     break
                 elif raw.lower() == 'help':
                     self.show_help()
@@ -87,28 +87,28 @@ class DSLAnalyzer:
                 self.analyze_tokens(tokens)
                 
             except KeyboardInterrupt:
-                print("\n\n👋 사용자가 중단했습니다.")
+                print("\n\n 사용자가 중단했습니다.")
                 break
             except Exception as e:
-                print(f"❌ 오류 발생: {e}")
+                print(f" 오류 발생: {e}")
     
     def analyze_tokens(self, tokens: List[str], output_file: Optional[str] = None):
         """토큰 분석 및 코드 생성"""
         # 유효한 토큰 확인
         invalid_tokens = [t for t in tokens if t not in self.available_tokens]
         if invalid_tokens:
-            print(f"⚠️  알 수 없는 토큰: {invalid_tokens}")
+            print(f"  알 수 없는 토큰: {invalid_tokens}")
             print("'help' 명령어로 사용 가능한 토큰을 확인하세요.")
             return
         
-        print(f"\n🔍 입력된 토큰: {' '.join(tokens)}")
+        print(f"\n 입력된 토큰: {' '.join(tokens)}")
         print("\n[1] ML 모델로 최적 시퀀스 예측 중...")
         
         try:
             predicted = predict_dsl(tokens)
-            print(f"🎯 예측된 DSL 시퀀스: {' → '.join(predicted)}")
+            print(f" 예측된 DSL 시퀀스: {' → '.join(predicted)}")
         except Exception as e:
-            print(f"⚠️  예측 실패 (원본 토큰 사용): {e}")
+            print(f"  예측 실패 (원본 토큰 사용): {e}")
             predicted = tokens
         
         print("\n[2] Python 분석 코드 생성 중...")
@@ -122,16 +122,16 @@ class DSLAnalyzer:
         try:
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write(code)
-            print(f"✅ 코드가 '{output_file}'에 저장되었습니다.")
+            print(f" 코드가 '{output_file}'에 저장되었습니다.")
             
             # 미리보기
-            print(f"\n📝 생성된 코드 미리보기:")
+            print(f"\n 생성된 코드 미리보기:")
             print("-" * 40)
             print(code[:500] + "..." if len(code) > 500 else code)
             print("-" * 40)
             
         except Exception as e:
-            print(f"❌ 파일 저장 실패: {e}")
+            print(f" 파일 저장 실패: {e}")
 
 def parse_arguments():
     """명령줄 인수 파싱"""
@@ -190,7 +190,7 @@ def main():
             
             # 파일 존재 확인
             if args.file and not Path(args.file).exists():
-                print(f"⚠️  파일을 찾을 수 없습니다: {args.file}")
+                print(f"  파일을 찾을 수 없습니다: {args.file}")
                 print("계속 진행하면 생성된 코드에서 파일 경로를 수정해야 합니다.")
             
             # 한 번만 실행하는 기본 모드
@@ -199,10 +199,10 @@ def main():
                 tokens = raw.split()
                 analyzer.analyze_tokens(tokens, args.output)
             else:
-                print("❌ 토큰이 입력되지 않았습니다.")
+                print(" 토큰이 입력되지 않았습니다.")
                 
     except Exception as e:
-        print(f"❌ 예상치 못한 오류: {e}")
+        print(f" 예상치 못한 오류: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
