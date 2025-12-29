@@ -25,7 +25,7 @@ class BuildConfig:
     def __init__(self, mode: str = "standard"):
         self.mode = mode
         self.name = "CSV-Analyzer"
-        self.main_script = "app.py"
+        self.main_script = "src/gui/app.py"
         self.console = False
         self.onefile = True
         self.optimize = 2 if mode == "optimized" else 1
@@ -41,7 +41,8 @@ class BuildConfig:
         # 추가 데이터 파일들
         self.datas = [
             ("README.md", "."),
-            ("dsl_tokenizer.json", "."),
+            ("src/dsl/dsl_tokenizer.json", "src/dsl"),
+            ("src/dsl/model.pt", "src/dsl"),
         ]
 
     def _get_exclude_modules(self) -> List[str]:

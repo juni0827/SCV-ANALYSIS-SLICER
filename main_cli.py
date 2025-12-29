@@ -18,8 +18,8 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from inference_dsl import predict_dsl
-from dsl2code import dsl_to_code
+from src.dsl.inference_dsl import predict_dsl
+from src.dsl.dsl2code import dsl_to_code
 
 class DSLAnalyzer:
     """DSL 분석기 클래스"""
@@ -30,7 +30,7 @@ class DSLAnalyzer:
     
     def _get_available_tokens(self) -> List[str]:
         """사용 가능한 DSL 토큰 목록 반환"""
-        from dsl2code import token_code_map
+        from src.dsl.dsl2code import token_code_map
         return list(token_code_map.keys())
     
     def show_help(self):
@@ -50,7 +50,7 @@ class DSLAnalyzer:
             "저장/내보내기": ["C27", "C28"]
         }
         
-        from dsl2code import token_code_map
+        from src.dsl.dsl2code import token_code_map
         
         for category, tokens in categories.items():
             print(f"\n🔸 {category}:")
