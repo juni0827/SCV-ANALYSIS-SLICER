@@ -76,7 +76,7 @@ try:
     model.eval()
     MODEL_AVAILABLE = True
 except Exception as e:
-    print(f"⚠️  ML 모델 로드 실패: {e}")
+    print(f"  ML 모델 로드 실패: {e}")
     print("기본 시퀀스를 사용합니다.")
     MODEL_AVAILABLE = False
 
@@ -86,7 +86,7 @@ def predict_dsl(input_tokens):
     supported_tokens = [token for token in input_tokens if token in SUPPORTED_TOKENS]
     
     if not supported_tokens:
-        print("⚠️  지원되는 토큰이 없습니다. 기본 시퀀스를 사용합니다.")
+        print("  지원되는 토큰이 없습니다. 기본 시퀀스를 사용합니다.")
         return input_tokens
     
     # 모델이 사용 가능한 경우만 예측 시도
@@ -110,5 +110,5 @@ def predict_dsl(input_tokens):
         return predicted_tokens if predicted_tokens else input_tokens
         
     except Exception as e:
-        print(f"⚠️  예측 중 오류 발생: {e}")
+        print(f"  예측 중 오류 발생: {e}")
         return input_tokens
