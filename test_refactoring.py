@@ -174,10 +174,10 @@ def main():
     print(f"\nTotal: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n🎉 All tests passed! The refactored structure is working correctly.")
+        print("\n All tests passed! The refactored structure is working correctly.")
         return 0
     else:
-        print("\n⚠️  Some tests failed. Please review the output above.")
+        print("\n  Some tests failed. Please review the output above.")
         return 1
 
 
