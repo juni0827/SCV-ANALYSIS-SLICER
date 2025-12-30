@@ -4,8 +4,7 @@ CSV Analyzer 통합 빌드 스크립트
 PyInstaller를 사용하여 크로스 플랫폼 실행 파일을 생성합니다.
 
 사용법:
-  python build.py              # 표준 빌드
-  python build.py --optimized  # 최적화 빌드
+  python build.py              # 빌드 시작
   python build.py --clean      # 빌드 파일 정리만
   python build.py --help       # 도움말
 """
@@ -22,13 +21,12 @@ from typing import List, Dict, Any
 class BuildConfig:
     """빌드 설정 클래스"""
 
-    def __init__(self, mode: str = "standard"):
-        self.mode = mode
+    def __init__(self):
         self.name = "CSV-Analyzer"
         self.main_script = "src/gui/app.py"
         self.console = False
         self.onefile = True
-        self.optimize = 2 if mode == "optimized" else 1
+        self.optimize = 1  # 기본 최적화 레벨
 
         # 플랫폼별 설정
         self.is_windows = platform.system() == "Windows"
@@ -46,8 +44,8 @@ class BuildConfig:
         ]
 
     def _get_exclude_modules(self) -> List[str]:
-        """빌드 모드에 따른 제외 모듈 목록"""
-        base_excludes = [
+        """제외 모듈 목록"""
+        return [
             'dearpygui',  # 사용하지 않는 GUI 라이브러리
             'PyQt5', 'PyQt6', 'PySide2', 'PySide6',  # Qt 라이브러리
             'wx',  # wxPython
@@ -55,19 +53,6 @@ class BuildConfig:
             'test', 'unittest', 'pytest',  # 테스트 모듈들
             'IPython', 'jupyter', 'notebook',  # Jupyter 관련
         ]
-
-        if self.mode == "optimized":
-            # 최적화 모드에서 추가 제외
-            optimized_excludes = [
-                'torch', 'torchvision',  # PyTorch
-                'tensorflow', 'keras',   # TensorFlow
-                'sklearn',               # scikit-learn
-                'scipy.spatial.distance', # scipy 일부
-                'PIL.ImageQt',          # PIL Qt 지원
-            ]
-            base_excludes.extend(optimized_excludes)
-
-        return base_excludes
 
     def get_pyinstaller_args(self) -> List[str]:
         """PyInstaller 명령어 인자 생성"""
@@ -107,7 +92,7 @@ class BuildTool:
 
     def cleanup(self) -> bool:
         """이전 빌드 파일들 정리"""
-        print("🧹 이전 빌드 파일 정리 중...")
+        print("Cleaning up previous build files...")
 
         dirs_to_remove = ['build', 'dist', '__pycache__']
         files_to_remove = ['*.spec']
@@ -118,9 +103,9 @@ class BuildTool:
             if os.path.exists(dir_name):
                 try:
                     shutil.rmtree(dir_name)
-                    print(f"   ✓ {dir_name} 폴더 제거")
+                    print(f"   Removed directory: {dir_name}")
                 except Exception as e:
-                    print(f"   ❌ {dir_name} 폴더 제거 실패: {e}")
+                    print(f"   Failed to remove directory {dir_name}: {e}")
                     success = False
 
         import glob
@@ -128,60 +113,62 @@ class BuildTool:
             for file_path in glob.glob(pattern):
                 try:
                     os.remove(file_path)
-                    print(f"   ✓ {file_path} 파일 제거")
+                    print(f"   Removed file: {file_path}")
                 except Exception as e:
-                    print(f"   ❌ {file_path} 파일 제거 실패: {e}")
+                    print(f"   Failed to remove file {file_path}: {e}")
                     success = False
 
         return success
 
     def check_dependencies(self) -> bool:
         """필요한 종속성 확인"""
-        print("🔍 종속성 확인 중...")
+        print("Checking dependencies...")
 
+        # PyInstaller 설치 여부 확인 (import 대신 명령어 실행)
         try:
-            import PyInstaller
-            print(f"   ✓ PyInstaller {PyInstaller.__version__}")
-        except ImportError:
-            print("   ❌ PyInstaller가 설치되지 않았습니다.")
+            result = subprocess.run([sys.executable, "-m", "pyinstaller", "--version"], 
+                                    capture_output=True, text=True, check=True)
+            version = result.stdout.strip().split()[-1]  # 버전 추출
+            print(f"   PyInstaller {version} found")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("   PyInstaller is not installed.")
             if self._ask_install("PyInstaller"):
                 try:
                     subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=True)
-                    print("   ✓ PyInstaller 설치 완료")
+                    print("   PyInstaller installed successfully")
                 except subprocess.CalledProcessError:
-                    print("   ❌ PyInstaller 설치 실패")
+                    print("   Failed to install PyInstaller")
                     return False
             else:
                 return False
 
         # 메인 스크립트 존재 확인
         if not os.path.exists(self.config.main_script):
-            print(f"   ❌ 메인 스크립트 {self.config.main_script}를 찾을 수 없습니다.")
+            print(f"   Main script {self.config.main_script} not found.")
             return False
 
-        print("   ✓ 모든 종속성 확인 완료")
+        print("   All dependencies checked")
         return True
 
     def build(self) -> bool:
         """실행 파일 빌드"""
-        mode_name = "최적화" if self.config.mode == "optimized" else "표준"
-        print(f"🔨 {mode_name} 모드로 CSV Analyzer 빌드 중...")
-        print("   (이 과정은 수 분이 소요될 수 있습니다...)")
+        print("Starting CSV Analyzer build...")
+        print("   (This process may take a few minutes...)")
 
         cmd = self.config.get_pyinstaller_args()
 
         try:
-            print(f"   실행 명령어: {' '.join(cmd)}")
+            print(f"   Executing command: {' '.join(cmd)}")
             result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-            print("   ✅ 빌드 성공!")
+            print("   Build process completed")
             return True
         except subprocess.CalledProcessError as e:
-            print(f"   ❌ 빌드 실패: {e}")
+            print(f"   Build failed: {e}")
             if e.stderr:
-                print(f"   오류 출력: {e.stderr}")
+                print(f"Error output: {e.stderr}")
             return False
         except Exception as e:
-            print(f"   ❌ 빌드 중 오류 발생: {e}")
+            print(f"   Error during build: {e}")
             return False
 
     def check_result(self) -> bool:
@@ -191,9 +178,9 @@ class BuildTool:
 
         if exe_path.exists():
             size_mb = exe_path.stat().st_size / (1024 * 1024)
-            print("\n🎉 빌드 성공!")
-            print(f"📁 생성된 파일: {exe_path}")
-            print(f"📏 파일 크기: {size_mb:.1f} MB")
+            print("\nBuild successful!")
+            print(f"Generated file: {exe_path}")
+            print(f"File size: {size_mb:.1f} MB")
 
             # 실행 테스트 옵션
             if self._ask_run():
@@ -201,7 +188,7 @@ class BuildTool:
 
             return True
         else:
-            print("❌ 실행 파일이 생성되지 않았습니다.")
+            print("   Executable was not created.")
             return False
 
     def _ask_install(self, package: str) -> bool:
@@ -209,10 +196,10 @@ class BuildTool:
         try:
             # CI/CD 환경에서는 자동으로 설치
             if os.environ.get('CI') or not sys.stdin.isatty():
-                print(f"   🔄 {package} 자동 설치 중...")
+                print(f"Installing {package} automatically...")
                 return True
 
-            response = input(f"{package}를 설치하시겠습니까? (y/n): ").strip().lower()
+            response = input(f"Do you want to install {package}? (y/n): ").strip().lower()
             return response in ['y', 'yes', '']
         except:
             return True  # 기본적으로 설치 시도
@@ -224,7 +211,7 @@ class BuildTool:
             if os.environ.get('CI') or not sys.stdin.isatty():
                 return False
 
-            response = input("\n🚀 빌드된 실행 파일을 지금 테스트하시겠습니까? (y/n): ").strip().lower()
+            response = input("\nDo you want to test the built executable now? (y/n): ").strip().lower()
             return response in ['y', 'yes', '']
         except:
             return False
@@ -236,19 +223,17 @@ class BuildTool:
                 os.startfile(str(exe_path))
             else:
                 subprocess.run(['xdg-open' if self.config.is_linux else 'open', str(exe_path)])
-            print("   ✅ 실행 파일 실행됨")
+            print("   Executable launched")
         except Exception as e:
-            print(f"   ❌ 실행 파일 실행 실패: {e}")
+            print(f"   Failed to launch executable: {e}")
 
 def main():
     """메인 함수"""
     print("=" * 60)
-    print("       🔧 CSV Analyzer 빌드 도구 🔧")
+    print("CSV Analyzer Build Tool")
     print("=" * 60)
 
     # 명령줄 인자 처리
-    mode = "standard"  # 기본 모드
-
     if len(sys.argv) > 1:
         arg = sys.argv[1].lower()
         if arg in ['-h', '--help', 'help']:
@@ -258,27 +243,14 @@ def main():
             config = BuildConfig()
             builder = BuildTool(config)
             success = builder.cleanup()
-            print("✅ 정리 완료!" if success else "❌ 정리 실패!")
+            print("Cleanup complete!" if success else "Cleanup failed!")
             return success
-        elif arg in ['--optimized', 'optimized', '-o']:
-            mode = "optimized"
-        elif arg in ['--standard', 'standard', '-s']:
-            mode = "standard"
-        else:
-            print(f"❌ 알 수 없는 옵션: {sys.argv[1]}")
-            print("\n사용법:")
-            print("  python build.py              # 표준 빌드")
-            print("  python build.py --optimized  # 최적화 빌드")
-            print("  python build.py --clean      # 빌드 파일 정리")
-            print("  python build.py --help       # 도움말")
-            return False
 
-    mode_name = "최적화" if mode == "optimized" else "표준"
-    print(f"📦 {mode_name} 모드로 빌드 시작...")
+    print("Starting build process...")
     print()
 
     # 빌드 설정 및 도구 초기화
-    config = BuildConfig(mode)
+    config = BuildConfig()
     builder = BuildTool(config)
 
     start_time = time.time()
@@ -286,19 +258,19 @@ def main():
     try:
         # 1. 정리
         if not builder.cleanup():
-            print("❌ 정리 단계 실패")
+            print("Cleanup step failed")
             return False
         print()
 
         # 2. 종속성 확인
         if not builder.check_dependencies():
-            print("❌ 종속성 확인 실패")
+            print("Dependency check failed")
             return False
         print()
 
         # 3. 빌드
         if not builder.build():
-            print("❌ 빌드 실패")
+            print("Build failed")
             return False
         print()
 
@@ -309,26 +281,26 @@ def main():
         # 빌드 시간 출력
         end_time = time.time()
         build_time = end_time - start_time
-        print(f"\n⏱️  총 빌드 시간: {build_time:.1f}초")
+        print(f"\nTotal build time: {build_time:.1f}s")
 
         return True
 
     except KeyboardInterrupt:
-        print("\n⏹️ 사용자에 의해 중단되었습니다.")
+        print("\nAborted by user.")
         return False
     except Exception as e:
-        print(f"❌ 예상치 못한 오류: {e}")
+        print(f"Unexpected error: {e}")
         return False
 
 if __name__ == "__main__":
     success = main()
 
     if not success:
-        print("\n❌ 빌드 실패")
+        print("\nBuild failed")
         if platform.system() == "Windows":
-            input("엔터를 누르면 종료합니다...")
+            input("Press Enter to exit...")
         sys.exit(1)
     else:
-        print("\n✅ 빌드 완료")
+        print("\nBuild complete")
         if platform.system() == "Windows":
-            input("엔터를 누르면 종료합니다...")
+            input("Press Enter to exit...")

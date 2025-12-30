@@ -6,7 +6,7 @@ Advanced tools for exploring, slicing, and visualizing large CSV files with ML-p
 
 ### Core Analysis
 
-- Modular architecture (`app.py`, `ui.py`, `data_loader.py`, `analysis.py`, `visualization.py`, `utils.py`, `combinations.py`)
+- Modular architecture (`src/core`, `src/gui`, `src/dsl`, `src/utils`)
 - Extended statistics: median, IQR, skewness, kurtosis, and missing percentages
 - Pagination to preview large tables page by page (up to 1000 rows)
 - Automatically selects the fastest CSV reader (`pyarrow` when available)

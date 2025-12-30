@@ -5,7 +5,7 @@ from pathlib import Path
 import logging
 import pandas as pd
 
-from utils import AppState
+from src.utils import AppState
 
 def _infer_engine() -> str:
     # Try pyarrow if installed; fallback to c engine

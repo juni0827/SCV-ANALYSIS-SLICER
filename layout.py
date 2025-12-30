@@ -1,6 +1,6 @@
 from __future__ import annotations
 import dearpygui.dearpygui as dpg
-from utils import AppState
+from src.utils import AppState
 
 # Tag strings
 TAG_PRIMARY = "Primary"

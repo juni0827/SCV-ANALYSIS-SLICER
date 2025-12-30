@@ -3,10 +3,10 @@ from pathlib import Path
 import dearpygui.dearpygui as dpg
 import numpy as np
 
-from utils import AppState, format_bytes
-from data_loader import load_csv, apply_filter, clear_filter
-from analysis import column_profile
-from visualization import (
+from src.utils import AppState, format_bytes
+from src.core.data_loader import load_csv, apply_filter, clear_filter
+from src.core.analysis import column_profile
+from src.gui.visualization import (
     plot_quick_distribution, plot_generic,
     # 병합본 visualization.py의 추가 플롯들
     plot_heatmap_crosstab, plot_scatter_corr, plot_box_group,
@@ -14,12 +14,12 @@ from visualization import (
     plot_regression_with_ci, plot_distribution_comparison, plot_pair_correlation,
     plot_time_series_decomposition, plot_advanced_categorical
 )
-from layout import auto_ratio, apply_layout
-from export_utils import save_dataframe, save_analysis_report
+from src.gui.layout import auto_ratio, apply_layout
+from src.utils.export_utils import save_dataframe, save_analysis_report
 
 # (Optional) combinations add-on: import if present
 try:
-    from combinations import analyze_combinations, suggest_plots
+    from src.core.combinations import analyze_combinations, suggest_plots
     HAVE_COMB = True
 except Exception:
     HAVE_COMB = False
