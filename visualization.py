@@ -7,6 +7,7 @@ import dearpygui.dearpygui as dpg
 import pandas as pd
 import seaborn as sns
 from scipy import stats
+import textwrap
 
 # Enhanced color palettes for better visual appeal
 DARK_COLORS = {
@@ -22,6 +23,22 @@ DARK_COLORS = {
 
 DARK_PALETTE = ['#4ECDC4', '#FF6B6B', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98FB98', '#F0E68C']
 CATEGORICAL_PALETTE = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98FB98', '#87CEEB']
+
+def _smart_label_formatter(text, width=12, max_lines=2):
+    """
+    Smartly formats text for labels:
+    1. Wraps text to specified width
+    2. Truncates if exceeds max_lines
+    """
+    text = str(text)
+    if len(text) <= width:
+        return text
+        
+    wrapped = textwrap.wrap(text, width=width)
+    if len(wrapped) > max_lines:
+        # Join first (max_lines-1) lines and add the last line truncated with ...
+        return "\n".join(wrapped[:max_lines-1] + [wrapped[max_lines-1][:width-3] + "..."])
+    return "\n".join(wrapped)
 
 def _apply_dark_theme_to_axis(ax, title=None):
     """Apply consistent dark theme styling to a matplotlib axis"""
@@ -132,6 +149,11 @@ def plot_bar_topk(df: pd.DataFrame, col: str, k: int = 20, parent_tag: str = "pl
     vc = df[col].astype("object").value_counts(dropna=False).head(k)
     vc.plot(kind="bar", ax=ax)
     ax.set_title(f"Top-{k} values of {col}")
+    
+    # Smart label formatting
+    labels = [_smart_label_formatter(x) for x in vc.index]
+    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=9)
+    
     for side in ("top","right"): ax.spines[side].set_visible(False)
     _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=860, height=360)
 
@@ -172,8 +194,13 @@ def plot_heatmap_crosstab(df: pd.DataFrame, col_a: str, col_b: str, metric: str 
         ax.set_title(f"Count heatmap: {col_a} × {col_b}")
     ax.set_xticks(range(min(len(ct.columns), max_levels)))
     ax.set_yticks(range(min(len(ct.index), max_levels)))
-    ax.set_xticklabels([str(x) for x in ct.columns], rotation=45, ha="right", fontsize=9)
-    ax.set_yticklabels([str(y) for y in ct.index], fontsize=9)
+    
+    # Smart label formatting for heatmap
+    x_labels = [_smart_label_formatter(x, width=10) for x in ct.columns]
+    y_labels = [_smart_label_formatter(y, width=10) for y in ct.index]
+    
+    ax.set_xticklabels(x_labels, rotation=45, ha="right", fontsize=9)
+    ax.set_yticklabels(y_labels, fontsize=9)
     fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=860, height=420)
 
@@ -223,8 +250,14 @@ def plot_corr_heatmap(df: pd.DataFrame, num_cols, top_k: int = 20, method: str =
     sel = sorted(list(keep))
     c = corr.loc[sel, sel]
     im = ax.imshow(c.values, aspect="auto")
-    ax.set_xticks(range(len(sel))); ax.set_xticklabels(sel, rotation=45, ha="right", fontsize=9)
-    ax.set_yticks(range(len(sel))); ax.set_yticklabels(sel, fontsize=9)
+    ax.set_xticks(range(len(sel)))
+    ax.set_yticks(range(len(sel)))
+    
+    # Smart label formatting for correlation heatmap
+    labels = [_smart_label_formatter(x, width=10) for x in sel]
+    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=9)
+    ax.set_yticklabels(labels, fontsize=9)
+    
     ax.set_title(f"{method.title()} correlation (top pairs)")
     fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=860, height=500)
