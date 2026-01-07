@@ -1,13 +1,12 @@
-
 #!/usr/bin/env python3
 """
-DSL 자동 분석 CLI 도구 - 확장된 버전
+DSL Automatic Analysis CLI Tool - Extended Version
 
-ML 기반 DSL 토큰 예측 및 코드 생성 도구입니다.
-사용자가 입력한 DSL 토큰을 기반으로 최적의 분석 시퀀스를 예측하고
-실행 가능한 Python 코드를 자동 생성합니다.
+ML-based DSL token prediction and code generation tool.
+Predicts optimal analysis sequences based on user-input DSL tokens and
+automatically creates executable Python code.
 
-사용법:
+Usage:
     python main_cli.py
     python main_cli.py --file data.csv --interactive
     python main_cli.py --tokens C1,C2,C6 --output analysis.py
@@ -19,300 +18,341 @@ from pathlib import Path
 from typing import List, Optional
 
 from src.dsl.inference_dsl import predict_dsl
-from src.dsl.dsl2code import dsl_to_code, TOKEN_HANDLERS, _get_token_description, generate_analysis_template
+from src.dsl.dsl2code import (
+    dsl_to_code,
+    TOKEN_HANDLERS,
+    _get_token_description,
+    generate_analysis_template,
+)
+
 
 class DSLAnalyzer:
-    """DSL 분석기 클래스"""
-    
+    """DSL analyzer class"""
+
     def __init__(self, csv_path: str = "your_file.csv"):
         self.csv_path = csv_path
         self.available_tokens = self._get_available_tokens()
-    
+
     def _get_available_tokens(self) -> List[str]:
-        """사용 가능한 DSL 토큰 목록 반환"""
+        """Return list of available DSL tokens"""
         return list(TOKEN_HANDLERS.keys())
-    
+
     def show_help(self):
-        """DSL 토큰 도움말 표시"""
+        """Display DSL token help"""
         print("=" * 60)
-        print(" 사용 가능한 DSL 토큰 (확장됨)")
+        print(" Available DSL Tokens (Extended)")
         print("=" * 60)
-        
+
         categories = {
-            "기본 정보": ["C1", "C2", "C4", "C9", "C15"],
-            "데이터 미리보기": ["C6", "C7", "C17", "C19"],
-            "결측치 분석": ["C3", "C11", "C21", "C33", "C48"],
-            "통계 분석": ["C1", "C14", "C29", "C30", "C41", "C42", "C43", "C58", "C59"],
-            "상관관계": ["C8", "C12", "C25", "C56", "C57"],
-            "시각화": ["C12", "C23", "C35", "C47", "C54", "C60", "C61"],
-            "데이터 조작": ["C36", "C37", "C26", "C46"],
-            "고급 분석 (ML)": ["C50", "C51", "C52", "C53", "C55"],
-            "유틸리티": ["C27", "C28", "SAVE", "EXPORT", "PROFILE"]
+            "Basic Information": ["C1", "C2", "C4", "C9", "C15"],
+            "Data Preview": ["C6", "C7", "C17", "C19"],
+            "Missing Value Analysis": ["C3", "C11", "C21", "C33", "C48"],
+            "Statistical Analysis": [
+                "C1",
+                "C14",
+                "C29",
+                "C30",
+                "C41",
+                "C42",
+                "C43",
+                "C58",
+                "C59",
+            ],
+            "Correlation": ["C8", "C12", "C25", "C56", "C57"],
+            "Visualization": ["C12", "C23", "C35", "C47", "C54", "C60", "C61"],
+            "Data Manipulation": ["C36", "C37", "C26", "C46"],
+            "Advanced Analysis (ML)": ["C50", "C51", "C52", "C53", "C55"],
+            "Utilities": ["C27", "C28", "SAVE", "EXPORT", "PROFILE"],
         }
-        
+
         for category, tokens in categories.items():
             print(f"\n {category}:")
             for token in tokens:
                 if token in TOKEN_HANDLERS:
                     description = _get_token_description(token)
                     print(f"  {token}: {description}")
-        
-        print("\n 예시 사용법:")
-        print("  C2 C1 C6          # 기본 정보 + 미리보기")
-        print("  C3 C11 C21 C48    # 심층 결측치 분석")
-        print("  C51 C52 C53       # 시계열, 이상치, PCA 분석 (고급)")
+
+        print("\n Example Usage:")
+        print("  C2 C1 C6          # Default Information + Preview")
+        print("  C3 C11 C21 C48    # In-depth missing value analysis")
+        print("  C51 C52 C53       # Time series, outlier, PCA analysis (advanced)")
 
     def analysis_mode(self):
-        """분석 모드"""
-        print("\n" + "="*60)
-        print("DSL 분석 모드")
-        print("="*60)
-        
+        """Analysis mode"""
+        print("\n" + "=" * 60)
+        print("DSL Analysis Mode")
+        print("=" * 60)
+
         while True:
-            print("\n[메인 메뉴]")
-            print("1.추천 템플릿 사용")
-            print("2.카테고리별 선택")
-            print("3.직접 입력")
-            print("0.종료")
-            
-            choice = input("\n선택 > ").strip()
-            
-            if choice == '1':
+            print("\n[Main Menu]")
+            print("1.Use recommended template")
+            print("2.Select by category")
+            print("3.Direct input")
+            print("0.Exit")
+
+            choice = input("\nSelect > ").strip()
+
+            if choice == "1":
                 self._wizard_template()
-            elif choice == '2':
+            elif choice == "2":
                 self._wizard_category()
-            elif choice == '3':
+            elif choice == "3":
                 return  # Return to interactive mode's manual input
-            elif choice == '0':
+            elif choice == "0":
                 sys.exit(0)
             else:
-                print("잘못된 선택입니다.")
+                print("Invalid selection.")
 
     def _wizard_template(self):
-        print("\n[추천 템플릿]")
+        print("\n[Recommended Templates]")
         templates = {
-            "basic": "기본 분석 (데이터 구조, 상위 행, 결측치)",
-            "statistical": "통계 분석 (기술통계, 분포, 왜도/첨도)",
-            "visualization": "시각화 패키지 (히스토그램, 박스플롯, 히트맵)",
-            "missing_data": "결측치 심층 분석",
-            "correlation": "상관관계 분석",
-            "advanced_ml": "고급 ML 분석 (시계열, 이상치, PCA)",
-            "comprehensive": "종합 분석 (모든 주요 분석 포함)"
+            "basic": "Basic analysis (data structure, top rows, missing values)",
+            "statistical": "Statistical analysis (descriptive statistics, distribution, skewness/kurtosis)",
+            "visualization": "Visualization package (histogram, box plot, heatmap)",
+            "missing_data": "In-depth missing value analysis",
+            "correlation": "Correlation analysis",
+            "advanced_ml": "Advanced ML analysis (time series, outlier, PCA)",
+            "comprehensive": "Comprehensive analysis (includes all major analyses)",
         }
-        
+
         keys = list(templates.keys())
         for i, key in enumerate(keys, 1):
             print(f"{i}. {key:<15} : {templates[key]}")
-            
+
         try:
-            sel = input("\n템플릿 번호 선택 (취소: 0) > ").strip()
-            if sel == '0': return
-            
+            sel = input("\nSelect template number (cancel: 0) > ").strip()
+            if sel == "0":
+                return
+
             idx = int(sel) - 1
             if 0 <= idx < len(keys):
                 selected_key = keys[idx]
                 tokens = generate_analysis_template(selected_key)
-                print(f"\n선택된 템플릿: {selected_key}")
+                print(f"\nSelected template: {selected_key}")
                 self.analyze_tokens(tokens)
-                input("\n엔터를 누르면 메뉴로 돌아갑니다...")
+                input("\nPress Enter to return to menu...")
             else:
-                print("잘못된 번호입니다.")
+                print("Invalid number.")
         except ValueError:
-            print("숫자를 입력해주세요.")
+            print("Please enter a number.")
 
     def _wizard_category(self):
         selected_tokens = []
         categories = {
-            "기본 정보": ["C1", "C2", "C4", "C9", "C15"],
-            "데이터 미리보기": ["C6", "C7", "C17", "C19"],
-            "결측치 분석": ["C3", "C11", "C21", "C33", "C48"],
-            "통계 분석": ["C1", "C14", "C29", "C30", "C41", "C42", "C43", "C58", "C59"],
-            "상관관계": ["C8", "C12", "C25", "C56", "C57"],
-            "시각화": ["C12", "C23", "C35", "C47", "C54", "C60", "C61"],
-            "고급 분석 (ML)": ["C50", "C51", "C52", "C53", "C55"]
+            "Basic Information": ["C1", "C2", "C4", "C9", "C15"],
+            "Data Preview": ["C6", "C7", "C17", "C19"],
+            "Missing Value Analysis": ["C3", "C11", "C21", "C33", "C48"],
+            "Statistical Analysis": [
+                "C1",
+                "C14",
+                "C29",
+                "C30",
+                "C41",
+                "C42",
+                "C43",
+                "C58",
+                "C59",
+            ],
+            "Correlation": ["C8", "C12", "C25", "C56", "C57"],
+            "Visualization": ["C12", "C23", "C35", "C47", "C54", "C60", "C61"],
+            "Advanced Analysis (ML)": ["C50", "C51", "C52", "C53", "C55"],
         }
-        
-        print("\n[카테고리별 선택]")
-        print("각 카테고리에서 필요한 분석을 선택하세요.")
-        
+
+        print("\n[Select by Category]")
+        print("Select the required analysis from each category.")
+
         for cat, tokens in categories.items():
             print(f"\n📂 {cat}")
             available = [t for t in tokens if t in TOKEN_HANDLERS]
-            
+
             # Show options
             for i, t in enumerate(available, 1):
                 desc = _get_token_description(t)
                 print(f"  {i}. {desc} ({t})")
-            
-            sel = input(f"  선택할 번호 (쉼표 구분, 건너뛰기: 엔터) > ").strip()
+
+            sel = input(
+                f"  Numbers to select (comma separated, skip: Enter) > "
+            ).strip()
             if sel:
                 try:
-                    indices = [int(x.strip()) for x in sel.split(',') if x.strip().isdigit()]
+                    indices = [
+                        int(x.strip()) for x in sel.split(",") if x.strip().isdigit()
+                    ]
                     for idx in indices:
                         if 1 <= idx <= len(available):
-                            token = available[idx-1]
+                            token = available[idx - 1]
                             if token not in selected_tokens:
                                 selected_tokens.append(token)
                 except ValueError:
-                    print("  잘못된 입력입니다. 건너뜁니다.")
-        
+                    print("  Invalid input. Skipping.")
+
         if selected_tokens:
-            print(f"\n최종 선택된 토큰: {selected_tokens}")
+            print(f"\nFinally selected tokens: {selected_tokens}")
             self.analyze_tokens(selected_tokens)
-            input("\n엔터를 누르면 메뉴로 돌아갑니다...")
+            input("\nPress Enter to return to menu...")
         else:
-            print("\n선택된 토큰이 없습니다.")
-    
+            print("\nNo tokens selected.")
+
     def interactive_mode(self):
-        """대화형 모드"""
-        print(" DSL 대화형 분석 모드")
-        print("도움말을 보려면 'help'를 입력하세요.")
-        print("분석 모드를 실행하려면 'analsis'를 입력하세요.")
-        print("종료하려면 'quit' 또는 'exit'를 입력하세요.")
-        
+        """Interactive mode"""
+        print(" DSL Interactive Analysis Mode")
+        print("Enter 'help' to see help.")
+        print("Enter 'analysis' to run analysis mode.")
+        print("Enter 'quit' or 'exit' to exit.")
+
         while True:
             try:
-                raw = input("\n DSL 토큰 입력 (예: C2 C1 C6): ").strip()
-                
-                if raw.lower() in ['quit', 'exit', 'q']:
-                    print(" DSL 분석기를 종료합니다.")
+                raw = input("\n Enter DSL tokens (e.g., C2 C1 C6): ").strip()
+
+                if raw.lower() in ["quit", "exit", "q"]:
+                    print(" Exiting DSL analyzer.")
                     break
-                elif raw.lower() == 'help':
+                elif raw.lower() == "help":
                     self.show_help()
                     continue
-                elif raw.lower() == 'analysis':
+                elif raw.lower() == "analysis":
                     self.analysis_mode()
                     continue
                 elif not raw:
                     continue
-                
+
                 tokens = raw.split()
                 self.analyze_tokens(tokens)
-                
+
             except KeyboardInterrupt:
-                print("\n\n 사용자가 중단했습니다.")
+                print("\n\n User interrupted.")
                 break
             except Exception as e:
-                print(f" 오류 발생: {e}")
-    
+                print(f" Error occurred: {e}")
+
     def analyze_tokens(self, tokens: List[str], output_file: Optional[str] = None):
-        """토큰 분석 및 코드 생성"""
-        # 유효한 토큰 확인
+        """Token analysis and code generation"""
+        # Valid token confirmation
         invalid_tokens = [t for t in tokens if t not in self.available_tokens]
         if invalid_tokens:
-            print(f"  알 수 없는 토큰: {invalid_tokens}")
-            print("'help' 명령어로 사용 가능한 토큰을 확인하세요.")
+            print(f"  Unknown tokens: {invalid_tokens}")
+            print("Use 'help' command to check available tokens.")
             return
-        
-        print(f"\n 입력된 토큰: {' '.join(tokens)}")
-        print("\n[1] ML 모델로 최적 시퀀스 예측 중...")
-        
+
+        print(f"\n Entered tokens: {' '.join(tokens)}")
+        print("\n[1] Predicting optimal sequence with ML model...")
+
         try:
             predicted = predict_dsl(tokens)
-            print(f" 예측된 DSL 시퀀스: {' → '.join(predicted)}")
+            print(f" Predicted DSL sequence: {' → '.join(predicted)}")
         except Exception as e:
-            print(f"  예측 실패 (원본 토큰 사용): {e}")
+            print(f"  Prediction failed (using original tokens): {e}")
             predicted = tokens
-        
-        print("\n[2] Python 분석 코드 생성 중...")
+
+        print("\n[2] Generating Python analysis code...")
         code = dsl_to_code(predicted, self.csv_path)
-        
-        # 출력 파일 결정
+
+        # Determine output file
         if not output_file:
             output_file = "generated_analysis.py"
-        
-        # 코드 저장
+
+        # Save code
         try:
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write(code)
-            print(f" 코드가 '{output_file}'에 저장되었습니다.")
-            
-            # 미리보기
-            print(f"\n 생성된 코드 미리보기:")
+            print(f" Code '{output_file}'saved to.")
+
+            # Preview
+            print(f"\n Preview of generated code:")
             print("-" * 40)
             print(code[:500] + "..." if len(code) > 500 else code)
             print("-" * 40)
-            
+
         except Exception as e:
-            print(f" 파일 저장 실패: {e}")
+            print(f" File save failed: {e}")
+
 
 def parse_arguments():
-    """명령줄 인수 파싱"""
+    """Command line argument parsing"""
     parser = argparse.ArgumentParser(
-        description="ML 기반 DSL 자동 분석 도구",
+        description="ML-based DSL automatic analysis tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-예시:
-  python main_cli.py                              # 대화형 모드
-  python main_cli.py --tokens C1,C2,C6           # 토큰 직접 지정
-  python main_cli.py --file data.csv --interactive  # 파일 지정 + 대화형
-  python main_cli.py --help-tokens                # 사용 가능한 토큰 보기
-        """
+Example:
+  python main_cli.py                              # Interactive mode
+  python main_cli.py --tokens C1,C2,C6           # Specify tokens directly
+  python main_cli.py --file data.csv --interactive  # Specify file + interactive
+  python main_cli.py --help-tokens                # View available tokens
+        """,
     )
-    
-    parser.add_argument('--file', '-f', 
-                       help='분석할 CSV 파일 경로')
-    parser.add_argument('--tokens', '-t',
-                       help='DSL 토큰 (쉼표로 구분, 예: C1,C2,C6)')
-    parser.add_argument('--output', '-o',
-                       help='출력 파일 경로 (기본값: generated_analysis.py)')
-    parser.add_argument('--interactive', '-i', action='store_true',
-                       help='대화형 모드 실행')
-    parser.add_argument('--help-tokens', action='store_true',
-                       help='사용 가능한 DSL 토큰 목록 표시')
-    
+
+    parser.add_argument("--file", "-f", help="Path to CSV file to analyze")
+    parser.add_argument(
+        "--tokens", "-t", help="DSL tokens (comma separated, e.g., C1,C2,C6)"
+    )
+    parser.add_argument(
+        "--output", "-o", help="Output file path (default: generated_analysis.py)"
+    )
+    parser.add_argument(
+        "--interactive", "-i", action="store_true", help="Run interactive mode"
+    )
+    parser.add_argument(
+        "--help-tokens",
+        action="store_true",
+        help="Display list of available DSL tokens",
+    )
+
     return parser.parse_args()
 
+
 def main():
-    """메인 함수"""
+    """Main function"""
     args = parse_arguments()
-    
-    # CSV 파일 경로 설정
+
+    # CSV File Path Configuration
     csv_path = args.file if args.file else "your_file.csv"
-    
-    # 분석기 초기화
+
+    # Initialize analyzer
     analyzer = DSLAnalyzer(csv_path)
-    
+
     try:
-        # 토큰 도움말 모드
+        # Token Help Mode
         if args.help_tokens:
             analyzer.show_help()
             return
-        
-        # 토큰이 직접 지정된 경우
+
+        # When tokens are specified directly
         if args.tokens:
-            tokens = [token.strip() for token in args.tokens.split(',')]
+            tokens = [token.strip() for token in args.tokens.split(",")]
             analyzer.analyze_tokens(tokens, args.output)
             return
-        
-        # 대화형 모드 또는 기본 모드
+
+        # Interactive mode or default mode
         if args.interactive:
             analyzer.interactive_mode()
         else:
-            print("=== DSL 자동 분석기 ===")
-            
-            # 파일 존재 확인
+            print("=== DSL Automatic Analyzer ===")
+
+            # File existence confirmation
             if args.file and not Path(args.file).exists():
-                print(f"  파일을 찾을 수 없습니다: {args.file}")
-                print("계속 진행하면 생성된 코드에서 파일 경로를 수정해야 합니다.")
-            
+                print(f"  File not found: {args.file}")
+                print(
+                    "If you continue, you will need to modify the file path in the generated code."
+                )
+
             # Suggest analysis mode
-            print("팁: 'analysis'를 입력하면 메뉴 방식의 분석 모드를 사용할 수 있습니다.")
-            
-            # 한 번만 실행하는 기본 모드
-            raw = input("DSL 토큰을 입력하세요 (예: C2 C1 C6) 또는 'analysis': ").strip()
-            
-            if raw.lower() == 'analysis':
+            print("Tip: Enter 'analysis' to use menu-based analysis mode.")
+
+            # Default mode (one-time execution)
+            raw = input("Enter DSL tokens (e.g., C2 C1 C6) or 'analysis': ").strip()
+
+            if raw.lower() == "analysis":
                 analyzer.analysis_mode()
             elif raw:
                 tokens = raw.split()
                 analyzer.analyze_tokens(tokens, args.output)
             else:
-                print(" 토큰이 입력되지 않았습니다.")
-                
+                print(" No tokens entered.")
+
     except Exception as e:
-        print(f" 예상치 못한 오류: {e}")
+        print(f" Unexpected error: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

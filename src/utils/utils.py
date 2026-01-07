@@ -1,9 +1,9 @@
-
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List
 import pandas as pd
+
 
 @dataclass
 class AppState:
@@ -24,11 +24,13 @@ class AppState:
     # user interaction
     user_overridden: bool = False
 
+
 def safe_int(x, default=0):
     try:
         return int(x)
     except Exception:
         return default
+
 
 def format_bytes(num_bytes: int) -> str:
     mb = num_bytes / (1024 * 1024)
