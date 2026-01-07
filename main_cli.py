@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-DSL 자동 분석 CLI 도구 - 확장된 버전
+DSL Automatic 분석 CLI Tool - 확장된 버전
 
-ML 기반 DSL 토큰 예측 및 코드 생성 도구입니다.
-사용자가 입력한 DSL 토큰을 기반으로 최적의 분석 시퀀스를 예측하고
-실행 가능한 Python 코드를 자동 생성합니다.
+ML based DSL token Yes측 및 Code generation Tool입니다.
+Use자가 Input한 DSL token을 based으로 최적의 분석 시퀀스를 Yes측하고
+Execution Available한 Python 코드를 Automatic Create합니다.
 
-사용법:
+Usage:
     python main_cli.py
     python main_cli.py --file data.csv --interactive
     python main_cli.py --tokens C1,C2,C6 --output analysis.py
@@ -27,18 +27,18 @@ from src.dsl.dsl2code import (
 
 
 class DSLAnalyzer:
-    """DSL 분석기 클래스"""
+    """DSL 분석기 Class"""
 
     def __init__(self, csv_path: str = "your_file.csv"):
         self.csv_path = csv_path
         self.available_tokens = self._get_available_tokens()
 
     def _get_available_tokens(self) -> List[str]:
-        """사용 가능한 DSL 토큰 목록 반환"""
+        """Use Available한 DSL token 목록 Return"""
         return list(TOKEN_HANDLERS.keys())
 
     def show_help(self):
-        """DSL 토큰 도움말 표시"""
+        """DSL token Help 표시"""
         print("=" * 60)
         print(" 사용 가능한 DSL 토큰 (확장됨)")
         print("=" * 60)
@@ -63,12 +63,12 @@ class DSLAnalyzer:
                     print(f"  {token}: {description}")
 
         print("\n 예시 사용법:")
-        print("  C2 C1 C6          # 기본 정보 + 미리보기")
+        print("  C2 C1 C6          # Default Information + 미리보기")
         print("  C3 C11 C21 C48    # 심층 결측치 분석")
         print("  C51 C52 C53       # 시계열, 이상치, PCA 분석 (고급)")
 
     def analysis_mode(self):
-        """분석 모드"""
+        """분석 Mode"""
         print("\n" + "=" * 60)
         print("DSL 분석 모드")
         print("=" * 60)
@@ -172,7 +172,7 @@ class DSLAnalyzer:
             print("\n선택된 토큰이 없습니다.")
 
     def interactive_mode(self):
-        """대화형 모드"""
+        """대화형 Mode"""
         print(" DSL 대화형 분석 모드")
         print("도움말을 보려면 'help'를 입력하세요.")
         print("분석 모드를 실행하려면 'analsis'를 입력하세요.")
@@ -204,8 +204,8 @@ class DSLAnalyzer:
                 print(f" 오류 발생: {e}")
 
     def analyze_tokens(self, tokens: List[str], output_file: Optional[str] = None):
-        """토큰 분석 및 코드 생성"""
-        # 유효한 토큰 확인
+        """Token 분석 및 Code generation"""
+        # Valid한 Token Confirmation
         invalid_tokens = [t for t in tokens if t not in self.available_tokens]
         if invalid_tokens:
             print(f"  알 수 없는 토큰: {invalid_tokens}")
@@ -225,11 +225,11 @@ class DSLAnalyzer:
         print("\n[2] Python 분석 코드 생성 중...")
         code = dsl_to_code(predicted, self.csv_path)
 
-        # 출력 파일 결정
+        # Output File 결정
         if not output_file:
             output_file = "generated_analysis.py"
 
-        # 코드 저장
+        # 코드 Save
         try:
             with open(output_file, "w", encoding="utf-8") as f:
                 f.write(code)
@@ -251,11 +251,11 @@ def parse_arguments():
         description="ML 기반 DSL 자동 분석 도구",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-예시:
-  python main_cli.py                              # 대화형 모드
-  python main_cli.py --tokens C1,C2,C6           # 토큰 직접 지정
-  python main_cli.py --file data.csv --interactive  # 파일 지정 + 대화형
-  python main_cli.py --help-tokens                # 사용 가능한 토큰 보기
+Example:
+  python main_cli.py                              # 대화형 Mode
+  python main_cli.py --tokens C1,C2,C6           # Token 직접 지정
+  python main_cli.py --file data.csv --interactive  # File 지정 + 대화형
+  python main_cli.py --help-tokens                # Use Available한 Token 보기
         """,
     )
 
@@ -275,34 +275,34 @@ def parse_arguments():
 
 
 def main():
-    """메인 함수"""
+    """메인 Function"""
     args = parse_arguments()
 
-    # CSV 파일 경로 설정
+    # CSV File Path Configuration
     csv_path = args.file if args.file else "your_file.csv"
 
-    # 분석기 초기화
+    # 분석기 Initialize
     analyzer = DSLAnalyzer(csv_path)
 
     try:
-        # 토큰 도움말 모드
+        # Token Help Mode
         if args.help_tokens:
             analyzer.show_help()
             return
 
-        # 토큰이 직접 지정된 경우
+        # Token이 직접 지정된 경우
         if args.tokens:
             tokens = [token.strip() for token in args.tokens.split(",")]
             analyzer.analyze_tokens(tokens, args.output)
             return
 
-        # 대화형 모드 또는 기본 모드
+        # 대화형 Mode or Default Mode
         if args.interactive:
             analyzer.interactive_mode()
         else:
             print("=== DSL 자동 분석기 ===")
 
-            # 파일 존재 확인
+            # File 존재 Confirmation
             if args.file and not Path(args.file).exists():
                 print(f"  파일을 찾을 수 없습니다: {args.file}")
                 print("계속 진행하면 생성된 코드에서 파일 경로를 수정해야 합니다.")
@@ -312,7 +312,7 @@ def main():
                 "팁: 'analysis'를 입력하면 메뉴 방식의 분석 모드를 사용할 수 있습니다."
             )
 
-            # 한 번만 실행하는 기본 모드
+            # 한 번만 Execution하는 Default Mode
             raw = input(
                 "DSL 토큰을 입력하세요 (예: C2 C1 C6) 또는 'analysis': "
             ).strip()

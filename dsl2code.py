@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 class DSLHandler:
-    """DSL 토큰을 처리하고 동적으로 코드를 생성하는 핸들러"""
+    """DSL token을 Processing하고 동적으로 코드를 Create하는 Handler"""
 
     @staticmethod
     def _get_basic_stats(df_name="df"):
@@ -62,14 +62,14 @@ class DSLHandler:
         """
         ).strip()
 
-    # --- 확장된 고급 분석 기능 (C51 ~ C70) ---
+    # --- 확장된 Advanced analysis Feature (C51 ~ C70) ---
 
     @staticmethod
     def _get_time_series_analysis(df_name="df"):
-        """C51: 시계열 분석 (날짜 컬럼 자동 감지)"""
+        """C51: 시계열 분석 (날짜 Column Automatic 감지)"""
         return textwrap.dedent(
             f"""
-            # 날짜 컬럼 자동 감지 및 시계열 분석
+            # 날짜 Column Automatic 감지 및 시계열 분석
             date_cols = {df_name}.select_dtypes(include=['datetime64']).columns
             if len(date_cols) == 0:
                 # 문자열에서 날짜 변환 시도
@@ -94,7 +94,7 @@ class DSLHandler:
 
     @staticmethod
     def _get_outlier_detection(df_name="df"):
-        """C52: IQR 기반 이상치 탐지"""
+        """C52: IQR based 이상치 탐지"""
         return textwrap.dedent(
             f"""
             # IQR 방식으로 이상치 탐지
@@ -111,13 +111,13 @@ class DSLHandler:
 
     @staticmethod
     def _get_pca_analysis(df_name="df"):
-        """C53: PCA 차원 축소 및 시각화"""
+        """C53: PCA 차원 축소 및 Visualization"""
         return textwrap.dedent(
             f"""
             from sklearn.decomposition import PCA
             from sklearn.preprocessing import StandardScaler
             
-            # 수치형 데이터만 선택 및 결측치 제거
+            # 수치형 Data만 Optional 및 결측치 Remove
             numeric_df = {df_name}.select_dtypes(include='number').dropna()
             if len(numeric_df.columns) >= 2:
                 scaler = StandardScaler()
@@ -139,7 +139,7 @@ class DSLHandler:
 
     @staticmethod
     def _get_text_analysis(df_name="df"):
-        """C54: 텍스트 컬럼 워드클라우드"""
+        """C54: 텍스트 Column 워드클라우드"""
         return textwrap.dedent(
             f"""
             from wordcloud import WordCloud
@@ -179,7 +179,7 @@ class DSLHandler:
                 print("Cluster Centers:")
                 print(pd.DataFrame(scaler.inverse_transform(kmeans.cluster_centers_), columns=numeric_df.columns))
                 
-                # 시각화 (첫 두 컬럼 기준)
+                # Visualization (첫 두 Column 기준)
                 if len(numeric_df.columns) >= 2:
                     plt.scatter(numeric_df.iloc[:, 0], numeric_df.iloc[:, 1], c=clusters, cmap='viridis')
                     plt.title('K-Means Clustering Result')
@@ -193,10 +193,10 @@ class DSLHandler:
 
     @staticmethod
     def _get_smart_visualization(df_name="df"):
-        """C60: 데이터 타입에 따른 스마트 시각화 추천"""
+        """C60: Data Type에 according to 스마트 Visualization 추천"""
         return textwrap.dedent(
             f"""
-            # 스마트 시각화: 데이터 타입 자동 감지 및 최적 그래프 생성
+            # 스마트 Visualization: Data Type Automatic 감지 및 최적 그래프 Create
             num_cols = {df_name}.select_dtypes(include='number').columns
             cat_cols = {df_name}.select_dtypes(include='object').columns
             
@@ -244,7 +244,7 @@ class DSLHandler:
 
     @staticmethod
     def _get_pie_chart(df_name="df"):
-        """C61: 범주형 데이터 원형 차트"""
+        """C61: 범주형 Data 원형 차트"""
         return textwrap.dedent(
             f"""
             # 원형 차트 (Pie Chart)
@@ -269,9 +269,9 @@ class DSLHandler:
         ).strip()
 
 
-# 토큰 정의 및 핸들러 매핑
+# Token 정의 및 Handler 매핑
 TOKEN_HANDLERS = {
-    # 기본 분석
+    # Basic analysis
     "C1": lambda: "df.describe()",
     "C2": lambda: "df.info()",
     "C3": lambda: "df.isnull().sum()",
@@ -293,7 +293,7 @@ TOKEN_HANDLERS = {
     "C18": lambda: "{col: df[col].unique()[:10] for col in df.columns}",  # 너무 길어질 수 있어 10개로 제한
     "C19": lambda: "df.head().T",
     "C20": lambda: "df.index",
-    # 데이터 조작 및 필터링
+    # Data 조작 및 Filter링
     "C21": lambda: "df[df.isnull().any(axis=1)].head()",
     "C22": lambda: "df.mode().iloc[0]",
     "C23": lambda: "df.hist(figsize=(12, 10)); plt.show()",
@@ -304,7 +304,7 @@ TOKEN_HANDLERS = {
     "C28": lambda: "df.to_json('output.json', orient='records')",
     "C29": lambda: "df.std(numeric_only=True)",
     "C30": lambda: "df.agg(['min', 'max'])",
-    # 고급 통계 및 시각화
+    # 고급 Statistics 및 Visualization
     "C31": lambda: "(df == 0).sum()",
     "C32": lambda: "df[df.duplicated()]",
     "C33": lambda: "df.notnull().sum()",
@@ -326,7 +326,7 @@ TOKEN_HANDLERS = {
     "C48": lambda: "df.columns[df.isnull().any()].tolist()",
     "C49": lambda: "pd.crosstab(df.iloc[:, 0], df.iloc[:, 1]) if len(df.columns) > 1 else 'Not enough columns'",
     "C50": DSLHandler._get_advanced_combinations,
-    # --- 확장된 기능 (C51-C70) ---
+    # --- 확장된 Feature (C51-C70) ---
     "C51": DSLHandler._get_time_series_analysis,
     "C52": DSLHandler._get_outlier_detection,
     "C53": DSLHandler._get_pca_analysis,
@@ -336,16 +336,16 @@ TOKEN_HANDLERS = {
     "C57": lambda: "df.corr(method='kendall', numeric_only=True)",  # 켄달 상관계수
     "C58": lambda: "df.select_dtypes(include='number').var()",  # 분산
     "C59": lambda: "df.select_dtypes(include='number').sem()",  # 표준오차
-    "C60": DSLHandler._get_smart_visualization,  # 스마트 시각화 추천
+    "C60": DSLHandler._get_smart_visualization,  # 스마트 Visualization 추천
     "C61": DSLHandler._get_pie_chart,  # 원형 차트
-    "SAVE": lambda: "# 결과 저장 로직 (실행 환경에 따라 다름)",
+    "SAVE": lambda: "# Result Save 로직 (Execution 환경에 따라 다름)",
     "EXPORT": lambda: "df.to_csv('analysis_result.csv', index=False)",
     "PROFILE": lambda: "import ydata_profiling; ydata_profiling.ProfileReport(df).to_file('report.html')",
 }
 
 
 def _get_token_description(token):
-    """토큰 설명 반환 (확장됨)"""
+    """Token 설명 Return (확장됨)"""
     descriptions = {
         "C1": "기술통계 요약",
         "C2": "데이터 정보",
@@ -415,16 +415,16 @@ def _get_token_description(token):
 
 def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
     """
-    DSL 토큰 시퀀스를 실행 가능한 Python 코드로 변환합니다.
-    Jinja2 없이도 동적인 코드 생성을 지원합니다.
+    DSL token 시퀀스를 Execution Available한 Python 코드로 변환합니다.
+    Jinja2 없이도 동적인 Code generation을 Support합니다.
     """
-    # 헤더 생성
+    # Header Create
     lines = [
         "#!/usr/bin/env python3",
         '"""',
-        f"자동 생성된 고급 데이터 분석 코드",
+        f"Automatic Create된 고급 Data 분석 코드",
         f'DSL 시퀀스: {" → ".join(dsl_sequence)}',
-        f'생성 시간: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
+        f'Create 시간: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
         '"""',
         "",
         "import pandas as pd",
@@ -436,10 +436,10 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
         "",
     ]
 
-    # 데이터 로딩
+    # Data 로딩
     lines.extend(
         [
-            "# --- 데이터 로딩 ---",
+            "# --- Data 로딩 ---",
             f"print('데이터 로딩 중: {csv_path}')",
             "try:",
             f"    df = pd.read_csv({repr(csv_path)})",
@@ -451,8 +451,8 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
         ]
     )
 
-    # 분석 실행 루프
-    lines.append("# --- 분석 시작 ---")
+    # Run analysis 루프
+    lines.append("# --- 분석 Start ---")
 
     for i, token in enumerate(dsl_sequence, 1):
         handler = TOKEN_HANDLERS.get(token)
@@ -463,13 +463,13 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
         lines.append("try:")
 
         if handler:
-            # 핸들러가 함수면 호출하여 코드 문자열을 얻고, 문자열이면 그대로 사용
+            # Handler가 Function면 Call하여 코드 문자열을 얻고, 문자열if 그as Use
             code_block = handler() if callable(handler) else handler
 
-            # 코드 블록 들여쓰기 적용
+            # 코드 블록 들여Write 적용
             indented_code = textwrap.indent(code_block, "    ")
 
-            # 결과 출력 로직이 포함되어 있지 않으면 print로 감싸기 (단순 표현식인 경우)
+            # Result Output 로직이 Include되어 있지 않으면 print로 감싸기 (단순 표현식인 경우)
             if (
                 "print" not in code_block
                 and "plt.show" not in code_block
@@ -485,13 +485,13 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
         lines.append("except Exception as e:")
         lines.append(f"    print(f'오류 발생 ({token}): {{e}}')")
 
-    lines.extend(["", "# --- 분석 완료 ---", "print('\\n모든 분석이 완료되었습니다.')"])
+    lines.extend(["", "# --- 분석 Complete ---", "print('\\n모든 분석이 Complete되었습니다.')"])
 
     return "\n".join(lines)
 
 
 def generate_analysis_template(analysis_type="basic"):
-    """분석 템플릿 생성"""
+    """분석 템플릿 Create"""
     templates = {
         "basic": ["C2", "C15", "C6", "C3", "C1"],
         "statistical": ["C1", "C14", "C29", "C41", "C42", "C43"],
@@ -499,7 +499,7 @@ def generate_analysis_template(analysis_type="basic"):
         "missing_data": ["C3", "C11", "C21", "C48"],
         "correlation": ["C8", "C12", "C25", "C50"],
         "comprehensive": ["C2", "C15", "C3", "C1", "C8", "C12", "C23", "C50"],
-        "advanced_ml": ["C51", "C52", "C53", "C55"],  # 새로 추가된 ML 템플릿
+        "advanced_ml": ["C51", "C52", "C53", "C55"],  # 새로 Add된 ML 템플릿
         "text_mining": ["C54"],  # 텍스트 분석 템플릿
     }
     return templates.get(analysis_type, templates["basic"])

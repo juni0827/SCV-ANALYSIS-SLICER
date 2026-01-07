@@ -12,7 +12,7 @@ class ToastWindow:
     def __init__(
         self, parent, message: str, kind: str = "info", is_dark_mode: bool = False
     ):
-        # 더 자연스러운 라이트/다크 모드별 색상
+        # 더 자연스러운 라이트/다크 Mode별 색상
         if is_dark_mode:
             self.colors = {
                 "info": "#2C5F7D",
@@ -36,7 +36,7 @@ class ToastWindow:
         self.toast.overrideredirect(True)
         self.toast.configure(bg=self.colors.get(kind, self.colors["info"]))
 
-        # 화면 중앙 상단에 위치
+        # 화면 중앙 상단에 Position
         parent.update_idletasks()
         x = parent.winfo_rootx() + (parent.winfo_width() // 2) - 150
         y = parent.winfo_rooty() + 50
@@ -51,7 +51,7 @@ class ToastWindow:
         )
         main_frame.pack(fill="both", expand=True, padx=2, pady=2)
 
-        # 메시지 라벨
+        # Message 라벨
         label = tk.Label(
             main_frame,
             text=message,
@@ -65,7 +65,7 @@ class ToastWindow:
         # 부드러운 나타나기 효과
         self.fade_in()
 
-        # 3초 후 자동 닫기
+        # 3초 후 Automatic Close
         self.toast.after(3000, self.fade_out)
 
     def fade_in(self):

@@ -60,20 +60,20 @@ class CSVAnalyzerApp:
         self.toast = None
         self.busy_after_id = None
 
-        # 캐싱 시스템 추가
+        # Add caching system
         self.data_cache = DataCache()
 
-        # Background task manager 추가
+        # Background task manager Add
         self.task_manager = BackgroundTaskManager(root)
 
-        # 다크모드 설정
+        # Dark mode configuration
         self.is_dark_mode = False
         self.setup_themes()
         self.setup_styles()
         self.setup_ui()
 
     def setup_themes(self):
-        """라이트/다크 모드 색상 테마 설정"""
+        """Light/dark mode color theme configuration"""
         self.themes = {
             "light": {
                 "bg": "#FAFAFA",
@@ -104,7 +104,7 @@ class CSVAnalyzerApp:
         }
 
     def update_widget_theme_optimized(self, widget, theme, visited=None, max_depth=10):
-        """최적화된 테마 업데이트 (재귀 호출 제한 및 캐싱)"""
+        """Optimization된 테마 Update (재귀 Call 제한 및 캐싱)"""
         if visited is None:
             visited = set()
 
@@ -120,12 +120,12 @@ class CSVAnalyzerApp:
         try:
             widget_class = widget.winfo_class()
 
-            # 자주 사용되는 위젯 타입 우선 처리
+            # 자주 Use되는 위젯 Type 우선 Processing
             if widget_class in ["Frame", "Toplevel"]:
                 if widget_class == "Frame":
                     widget.configure(bg=theme["panel_bg"])
             elif widget_class == "Label":
-                # 라벨 배경색이 테마 색상이면 업데이트
+                # 라벨 Background color이 테마 색상if Update
                 current_bg = str(widget.cget("bg"))
                 if current_bg in [
                     "white",
@@ -137,7 +137,7 @@ class CSVAnalyzerApp:
                 ]:
                     widget.configure(bg=theme["panel_bg"], fg=theme["text_color"])
             elif widget_class == "Button":
-                # 일반 버튼만 업데이트 (특정 버튼 제외)
+                # 일반 버튼만 Update (특정 버튼 Exclude)
                 current_text = str(widget.cget("text"))
                 if current_text not in ["🌙", "☀️", "Toggle Dark Mode"]:
                     current_bg = str(widget.cget("bg"))
@@ -171,9 +171,9 @@ class CSVAnalyzerApp:
                 self.update_widget_theme_optimized(child, theme, visited, max_depth - 1)
 
         except tk.TclError:
-            # 일부 위젯은 특정 속성을 지원하지 않을 수 있음
+            # Some 위젯은 특정 속성을 Support하지 않을 수 Exists
             pass
-        """스타일 설정"""
+        """스타일 Configuration"""
         style = ttk.Style()
         style.theme_use("clam")
         self.apply_theme_styles()
@@ -183,7 +183,7 @@ class CSVAnalyzerApp:
         style = ttk.Style()
         theme = self.current_theme
 
-        # TTK 스타일 설정
+        # TTK 스타일 Configuration
         style.configure(
             "Title.TLabel", font=("Arial", 12, "bold"), foreground=theme["accent"]
         )
@@ -225,7 +225,7 @@ class CSVAnalyzerApp:
         )
 
     def toggle_dark_mode(self):
-        """다크모드 토글 (부드러운 전환 효과)"""
+        """다크Mode 토글 (부드러운 전환 효과)"""
         self.is_dark_mode = not self.is_dark_mode
         self.current_theme = (
             self.themes["dark"] if self.is_dark_mode else self.themes["light"]
@@ -234,18 +234,18 @@ class CSVAnalyzerApp:
         # 부드러운 전환을 위한 단계별 적용
         self.apply_theme_transition()
 
-        # 통계 컨테이너 스타일 업데이트
+        # Statistics 컨테이너 스타일 Update
         self.root.after(100, self.update_stats_container_style)
 
-        # 통계 라벨 강제 업데이트
+        # Statistics 라벨 강제 Update
         self.root.after(200, lambda: self.force_update_stat_labels(self.current_theme))
 
     def apply_theme_transition(self):
-        """부드러운 테마 전환"""
+        """부드러운 Theme switching"""
         # 스타일 먼저 적용
         self.apply_theme_styles()
 
-        # 위젯들에 순차적으로 적용 (애니메이션 효과)
+        # 위젯들에 Sequential적으로 적용 (애니메이션 효과)
         self.transition_step = 0
         self.transition_widgets()
 
@@ -267,14 +267,14 @@ class CSVAnalyzerApp:
             self.transition_step += 1
             self.root.after(50, self.transition_widgets)
         elif self.transition_step == 3:
-            # 4단계: 마무리 및 버튼 업데이트
+            # 4단계: 마무리 및 버튼 Update
             self.finalize_theme_transition()
 
     def apply_theme_to_panels(self):
         """패널 위젯들에 테마 적용"""
         theme = self.current_theme
 
-        # 메인 컨테이너들 찾아서 업데이트
+        # 메인 컨테이너들 찾아서 Update
         for widget in self.root.winfo_children():
             if isinstance(widget, tk.Frame):
                 self.update_frame_theme(widget, theme)
@@ -291,7 +291,7 @@ class CSVAnalyzerApp:
                 insertbackground=theme["text_color"],
             )
 
-        # 통계 라벨들 색상 업데이트
+        # Statistics 라벨들 색상 Update
         if hasattr(self, "rows_label") and self.rows_label.winfo_exists():
             current_text = self.rows_label.cget("text")
             self.rows_label.config(bg=theme["panel_bg"], fg=theme["text_color"])
@@ -305,18 +305,18 @@ class CSVAnalyzerApp:
             self.memory_label.config(bg=theme["panel_bg"], fg=theme["text_color"])
 
     def finalize_theme_transition(self):
-        """테마 전환 마무리"""
-        # 전체 위젯 업데이트
+        """Theme switching 마무리"""
+        # All 위젯 Update
         self.apply_theme_to_widgets()
 
-        # 토글 버튼 업데이트 (부드러운 효과)
+        # 토글 버튼 Update (부드러운 효과)
         self.animate_toggle_button()
 
     def animate_toggle_button(self):
         """토글 버튼 애니메이션"""
         theme = self.current_theme
 
-        # 버튼 색상 전환
+        # Button color 전환
         self.theme_toggle_btn.configure(
             text="🌙 Dark" if not self.is_dark_mode else "☀️ Light",
             bg=theme["accent"],
@@ -324,13 +324,13 @@ class CSVAnalyzerApp:
             activebackground=theme["hover"],
         )
 
-        # 버튼 크기 애니메이션 (약간의 펄스 효과)
+        # 버튼 Size 애니메이션 (약간의 펄스 효과)
         original_font = self.theme_toggle_btn.cget("font")
         self.theme_toggle_btn.configure(font=("Arial", 9, "bold"))
         self.root.after(100, lambda: self.theme_toggle_btn.configure(font=("Arial", 8)))
 
     def update_frame_theme(self, frame, theme):
-        """프레임과 자식 위젯들 테마 업데이트"""
+        """프레임과 자식 위젯들 테마 Update"""
         try:
             frame.configure(bg=theme["panel_bg"])
 
@@ -340,7 +340,7 @@ class CSVAnalyzerApp:
                 if widget_class == "Frame":
                     self.update_frame_theme(child, theme)
                 elif widget_class == "Label":
-                    # 라벨 배경색이 패널 색상이면 업데이트
+                    # 라벨 Background color이 패널 색상if Update
                     current_bg = str(child.cget("bg"))
                     if current_bg in [
                         "white",
@@ -386,7 +386,7 @@ class CSVAnalyzerApp:
         button.bind("<Leave>", on_leave)
 
     def create_styled_button(self, parent, text, command, bg_color, fg_color="white"):
-        """스타일이 적용된 버튼 생성"""
+        """스타일이 적용된 버튼 Create"""
         btn = tk.Button(
             parent,
             text=text,
@@ -422,7 +422,7 @@ class CSVAnalyzerApp:
         # 루트 윈도우
         self.root.configure(bg=theme["bg"])
 
-        # 재귀적으로 모든 위젯 업데이트
+        # 재귀적으로 모든 위젯 Update
         self.update_widget_theme(self.root, theme)
 
     def update_widget_theme(self, widget, theme):
@@ -433,11 +433,11 @@ class CSVAnalyzerApp:
             if widget_class in ["Frame", "Toplevel"]:
                 widget.configure(bg=theme["panel_bg"])
             elif widget_class == "Label":
-                # 라벨의 현재 색상 확인
+                # 라벨의 현재 색상 Confirmation
                 current_bg = str(widget.cget("bg"))
                 current_fg = str(widget.cget("fg"))
 
-                # 더 포괄적인 조건으로 라벨 업데이트
+                # 더 포괄적인 조건으로 라벨 Update
                 should_update_bg = current_bg in [
                     "white",
                     "#FFFFFF",
@@ -465,12 +465,12 @@ class CSVAnalyzerApp:
                 # 테마 토글 버튼과 일반 버튼 구분
                 current_text = str(widget.cget("text"))
 
-                # 테마 토글 버튼은 제외
+                # 테마 토글 버튼은 Exclude
                 if current_text not in ["🌙", "☀️"]:
                     current_bg = str(widget.cget("bg"))
                     current_fg = str(widget.cget("fg"))
 
-                    # 일반적인 버튼 배경색을 가진 경우
+                    # 일반적인 버튼 Background color을 가진 경우
                     if current_bg in [
                         "#F0F0F0",
                         "#FAFAFA",
@@ -481,7 +481,7 @@ class CSVAnalyzerApp:
                         "SystemButtonFace",
                     ]:
                         widget.configure(bg=theme["button_bg"], fg=theme["button_fg"])
-                    # 텍스트가 기본 색상인 경우 텍스트만 변경
+                    # 텍스트가 Default 색상인 경우 텍스트만 Change
                     elif current_fg in [
                         "black",
                         "#000000",
@@ -497,7 +497,7 @@ class CSVAnalyzerApp:
                     insertbackground=theme["text_color"],
                 )
             elif widget_class == "Entry":
-                # Entry 위젯은 항상 테마 색상으로 업데이트
+                # Entry 위젯은 항상 테마 색상으로 Update
                 widget.configure(
                     bg=theme["entry_bg"],
                     fg=theme["text_color"],
@@ -525,29 +525,29 @@ class CSVAnalyzerApp:
                 self.update_widget_theme(child, theme)
 
         except tk.TclError:
-            # 일부 위젯은 특정 속성을 지원하지 않을 수 있음
+            # Some 위젯은 특정 속성을 Support하지 않을 수 Exists
             pass
 
-        # 특정 라벨들을 강제로 업데이트 (테마 변경 시)
-        if widget == self.root:  # 루트 위젯 처리 시에만 실행
+        # 특정 라벨들을 강제로 Update (테마 Change 시)
+        if widget == self.root:  # 루트 위젯 Processing 시에만 Execution
             self.force_update_stat_labels(theme)
 
     def update_stats_container_style(self):
-        """통계 컨테이너 스타일 업데이트"""
+        """Statistics 컨테이너 스타일 Update"""
         if hasattr(self, "stats_container") and self.stats_container.winfo_exists():
             if self.is_dark_mode:
-                # 다크모드에서는 테두리 없이 배경 색상만으로 구분
+                # 다크Mode에서는 테두리 없이 배경 색상만으로 구분
                 self.stats_container.configure(
                     bg=self.current_theme["panel_bg"], relief="flat", bd=0
                 )
             else:
-                # 라이트모드에서는 얇은 테두리로 구분
+                # 라이트Mode에서는 얇은 테두리로 구분
                 self.stats_container.configure(
                     bg=self.current_theme["panel_bg"], relief="solid", bd=1
                 )
 
     def force_update_stat_labels(self, theme):
-        """통계 라벨들을 강제로 업데이트"""
+        """Statistics 라벨들을 강제로 Update"""
         try:
             if hasattr(self, "rows_label") and self.rows_label.winfo_exists():
                 self.rows_label.configure(bg=theme["panel_bg"], fg=theme["text_color"])
@@ -561,7 +561,7 @@ class CSVAnalyzerApp:
             pass
 
     def setup_ui(self):
-        """UI 설정 - 원래 dearpygui 디자인 복원"""
+        """UI Configuration - 원래 dearpygui 디자인 Restore"""
         self.root.title("CSV Analyzer (Compatible)")
         self.root.geometry("1200x800")
         self.root.configure(bg=self.current_theme["bg"])
@@ -591,7 +591,7 @@ class CSVAnalyzerApp:
             parent, bg=self.current_theme["panel_bg"], relief="solid", bd=1, width=300
         )
         left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 5))
-        left_frame.pack_propagate(False)  # 크기 고정
+        left_frame.pack_propagate(False)  # Size 고정
 
         # 제목과 테마 토글 버튼
         header_frame = tk.Frame(left_frame, bg=self.current_theme["panel_bg"])
@@ -606,7 +606,7 @@ class CSVAnalyzerApp:
         )
         title_label.pack(side="left")
 
-        # 다크모드 토글 버튼 (호버 효과 추가)
+        # 다크Mode 토글 버튼 (호버 효과 Add)
         self.theme_toggle_btn = tk.Button(
             header_frame,
             text="🌙 Dark",
@@ -628,7 +628,7 @@ class CSVAnalyzerApp:
         sep1 = ttk.Separator(left_frame, orient="horizontal")
         sep1.pack(fill="x", padx=10, pady=5)
 
-        # Load CSV 버튼 (호버 효과 추가)
+        # Load CSV 버튼 (호버 효과 Add)
         self.load_btn = tk.Button(
             left_frame,
             text="Load CSV File",
@@ -643,7 +643,7 @@ class CSVAnalyzerApp:
         )
         self.load_btn.pack(fill="x", padx=15, pady=(10, 5))
 
-        # 로드 버튼 호버 효과
+        # Load 버튼 호버 효과
         def load_btn_hover_enter(e):
             self.load_btn.configure(bg="#2980B9")
 
@@ -663,8 +663,8 @@ class CSVAnalyzerApp:
         )
         drag_label.pack(pady=(5, 15))
 
-        # 통계 섹션
-        # Statistics 섹션 (일반 Frame으로 변경)
+        # Statistics 섹션
+        # Statistics 섹션 (일반 Frame으로 Change)
         stats_section = tk.Frame(left_frame, bg=self.current_theme["panel_bg"])
         stats_section.pack(fill="x", padx=15, pady=10)
 
@@ -678,7 +678,7 @@ class CSVAnalyzerApp:
         )
         stats_title.pack(anchor="w", pady=(0, 5))
 
-        # 통계 테이블
+        # Statistics Table
         self.stats_container = tk.Frame(
             stats_section, bg=self.current_theme["panel_bg"]
         )
@@ -752,7 +752,7 @@ class CSVAnalyzerApp:
         sep2 = ttk.Separator(left_frame, orient="horizontal")
         sep2.pack(fill="x", padx=10, pady=15)
 
-        # 상태 표시
+        # State 표시
         status_container = tk.Frame(left_frame, bg=self.current_theme["panel_bg"])
         status_container.pack(fill="x", padx=15, pady=(0, 15))
 
@@ -766,7 +766,7 @@ class CSVAnalyzerApp:
         )
         self.spinner_label.pack(side="left")
 
-        # 상태 텍스트
+        # State 텍스트
         self.status_label = tk.Label(
             status_container,
             text="Ready",
@@ -800,7 +800,7 @@ class CSVAnalyzerApp:
         self.build_combinations_tab()
 
     def build_slicer_tab(self):
-        """CSV 슬라이싱 탭 - 대용량 데이터 지원"""
+        """CSV 슬라이싱 탭 - Large Data Support"""
         slicer_frame = ttk.Frame(self.notebook)
         self.notebook.add(slicer_frame, text="CSV Slicer")
 
@@ -808,7 +808,7 @@ class CSVAnalyzerApp:
         control_frame = tk.Frame(slicer_frame, bg=self.current_theme["panel_bg"])
         control_frame.pack(fill="x", padx=10, pady=10)
 
-        # 행 범위 선택
+        # Row 범위 Optional
         range_frame = tk.Frame(control_frame, bg=self.current_theme["panel_bg"])
         range_frame.pack(fill="x", pady=(0, 10))
 
@@ -820,7 +820,7 @@ class CSVAnalyzerApp:
             fg=self.current_theme["text_color"],
         ).pack(side="left")
 
-        # 시작 행
+        # Start Row
         tk.Label(
             range_frame,
             text="Start:",
@@ -837,7 +837,7 @@ class CSVAnalyzerApp:
         )
         self.start_row_entry.pack(side="left", padx=(0, 10))
 
-        # 끝 행
+        # 끝 Row
         tk.Label(
             range_frame,
             text="End:",
@@ -854,7 +854,7 @@ class CSVAnalyzerApp:
         )
         self.end_row_entry.pack(side="left", padx=(0, 10))
 
-        # 컬럼 선택
+        # Column Optional
         column_frame = tk.Frame(control_frame, bg=self.current_theme["panel_bg"])
         column_frame.pack(fill="x", pady=(0, 10))
 
@@ -866,11 +866,11 @@ class CSVAnalyzerApp:
             fg=self.current_theme["text_color"],
         ).pack(side="left")
 
-        # 컬럼 선택 체크박스들
+        # Column Optional 체크박스들
         self.column_checkboxes = {}
         self.column_vars = {}
 
-        # 컬럼 선택을 위한 스크롤 가능한 프레임
+        # Column Optional을 위한 스크롤 Available한 프레임
         column_scroll_frame = tk.Frame(column_frame, bg=self.current_theme["panel_bg"])
         column_scroll_frame.pack(side="left", fill="x", expand=True, padx=(10, 0))
 
@@ -906,7 +906,7 @@ class CSVAnalyzerApp:
         )
         self.clear_all_btn.pack(side="left", padx=(0, 5))
 
-        # 슬라이스 및 내보내기 버튼
+        # 슬라이스 및 Export 버튼
         self.slice_btn = self.create_styled_button(
             control_frame, "Slice Data", self.slice_data, "#3498DB"
         )
@@ -917,11 +917,11 @@ class CSVAnalyzerApp:
         )
         self.export_slice_btn.pack(side="left")
 
-        # 슬라이스된 데이터 표시 영역
+        # 슬라이스된 Data 표시 영역
         result_frame = tk.Frame(slicer_frame, bg=self.current_theme["panel_bg"])
         result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        # 결과 정보
+        # Result Information
         info_frame = tk.Frame(result_frame, bg=self.current_theme["panel_bg"])
         info_frame.pack(fill="x", pady=(0, 5))
 
@@ -934,7 +934,7 @@ class CSVAnalyzerApp:
         )
         self.slice_info_label.pack(side="left")
 
-        # 슬라이스된 데이터 Treeview
+        # 슬라이스된 Data Treeview
         tree_container = tk.Frame(result_frame, bg=self.current_theme["panel_bg"])
         tree_container.pack(fill=tk.BOTH, expand=True)
 
@@ -960,22 +960,22 @@ class CSVAnalyzerApp:
         tree_container.grid_rowconfigure(0, weight=1)
         tree_container.grid_columnconfigure(0, weight=1)
 
-        # 초기 상태
+        # 초기 State
         self.current_sliced_data = None
         self.update_column_checkboxes()
 
     def update_column_checkboxes(self):
-        """컬럼 체크박스 업데이트"""
-        # 기존 체크박스 제거
+        """Column 체크박스 Update"""
+        # 기존 체크박스 Remove
         for widget in self.column_inner_frame.winfo_children():
             widget.destroy()
 
         if self.state.df is None:
             return
 
-        # 컬럼별 체크박스 생성
+        # Column별 체크박스 Create
         for i, col in enumerate(self.state.df.columns):
-            var = tk.BooleanVar(value=True)  # 기본적으로 모두 선택
+            var = tk.BooleanVar(value=True)  # Default적으로 모두 Optional
             self.column_vars[col] = var
 
             cb = tk.Checkbutton(
@@ -988,32 +988,32 @@ class CSVAnalyzerApp:
             )
             cb.pack(side="left", padx=5)
 
-        # 캔버스 크기 업데이트
+        # 캔버스 Size Update
         self.column_inner_frame.update_idletasks()
         self.column_canvas.configure(scrollregion=self.column_canvas.bbox("all"))
 
     def select_all_columns(self):
-        """모든 컬럼 선택"""
+        """모든 Column Optional"""
         for var in self.column_vars.values():
             var.set(True)
 
     def clear_all_columns(self):
-        """모든 컬럼 선택 해제"""
+        """모든 Column Optional 해제"""
         for var in self.column_vars.values():
             var.set(False)
 
     def slice_data(self):
-        """데이터 슬라이싱 실행"""
+        """Data 슬라이싱 Execution"""
         if self.state.df is None:
             self.show_toast("No data loaded", "error")
             return
 
         try:
-            # 행 범위 파싱
+            # Row 범위 파싱
             start_row = int(self.start_row_var.get())
             end_row = int(self.end_row_var.get())
 
-            # 유효성 검사
+            # Valid성 검사
             if start_row < 0:
                 start_row = 0
             if end_row > len(self.state.df):
@@ -1022,7 +1022,7 @@ class CSVAnalyzerApp:
                 self.show_toast("Invalid row range", "error")
                 return
 
-            # 선택된 컬럼들
+            # Optional된 Column들
             selected_columns = [
                 col for col, var in self.column_vars.items() if var.get()
             ]
@@ -1030,15 +1030,15 @@ class CSVAnalyzerApp:
                 self.show_toast("No columns selected", "error")
                 return
 
-            # 데이터 슬라이싱 (최적화된 방식)
+            # Data 슬라이싱 (Optimization된 방식)
             self.current_sliced_data = self.state.df.iloc[start_row:end_row][
                 selected_columns
             ].copy()
 
-            # 결과 표시
+            # Result 표시
             self.display_sliced_data()
 
-            # 정보 업데이트
+            # Information Update
             info_text = f"Sliced {len(self.current_sliced_data):,} rows, {len(selected_columns)} columns"
             self.slice_info_label.config(text=info_text)
 
@@ -1052,24 +1052,24 @@ class CSVAnalyzerApp:
             self.show_toast(f"Slicing failed: {e}", "error")
 
     def display_sliced_data(self):
-        """슬라이스된 데이터 표시 (페이지네이션 지원)"""
+        """슬라이스된 Data 표시 (페이지네이션 Support)"""
         if self.current_sliced_data is None or self.current_sliced_data.empty:
             return
 
-        # Treeview 초기화
+        # Treeview Initialize
         for item in self.slicer_tree.get_children():
             self.slicer_tree.delete(item)
 
-        # 컬럼 헤더 설정
+        # Column Header Configuration
         self.slicer_tree["columns"] = list(self.current_sliced_data.columns)
         for col in self.current_sliced_data.columns:
             self.slicer_tree.heading(col, text=col)
             self.slicer_tree.column(col, width=min(120, len(str(col)) * 8))
 
-        # 데이터 표시 (최대 10000행까지 표시 제한 해제 - 페이지네이션으로 처리)
+        # Data 표시 (최대 10000Row까지 표시 제한 해제 - 페이지네이션으로 Processing)
         max_display_rows = min(
             5000, len(self.current_sliced_data)
-        )  # 성능을 위해 5000행으로 제한
+        )  # Performance을 for 5000Row으로 제한
 
         for idx, row in self.current_sliced_data.head(max_display_rows).iterrows():
             values = []
@@ -1082,7 +1082,7 @@ class CSVAnalyzerApp:
                     values.append(str(val))
             self.slicer_tree.insert("", "end", values=values)
 
-        # 대용량 데이터 안내
+        # Large Data 안내
         if len(self.current_sliced_data) > max_display_rows:
             self.show_toast(
                 f"Showing first {max_display_rows:,} rows of {len(self.current_sliced_data):,} total rows",
@@ -1090,7 +1090,7 @@ class CSVAnalyzerApp:
             )
 
     def export_sliced_data(self):
-        """슬라이스된 데이터 내보내기"""
+        """슬라이스된 Data Export"""
         if self.current_sliced_data is None:
             self.show_toast("No sliced data to export", "error")
             return
@@ -1112,7 +1112,7 @@ class CSVAnalyzerApp:
             self.show_toast(f"Export failed: {e}", "error")
 
     def build_combinations_tab(self):
-        """조합 분석 탭"""
+        """Combinations analysis 탭"""
         combinations_frame = ttk.Frame(self.notebook)
         self.notebook.add(combinations_frame, text="Combinations Analysis")
 
@@ -1134,7 +1134,7 @@ class CSVAnalyzerApp:
         )
         title_label.pack(side="left")
 
-        # 분석 실행 버튼
+        # Run analysis 버튼
         self.run_combinations_btn = tk.Button(
             control_frame,
             text="분석 실행",
@@ -1149,11 +1149,11 @@ class CSVAnalyzerApp:
         )
         self.run_combinations_btn.pack(side="right")
 
-        # 설정 영역
+        # Configuration 영역
         settings_frame = tk.Frame(main_container, bg=self.current_theme["panel_bg"])
         settings_frame.pack(fill="x", pady=(0, 10))
 
-        # DSL 토큰 입력
+        # DSL token Input
         dsl_label = tk.Label(
             settings_frame,
             text="DSL 토큰 (선택사항):",
@@ -1171,7 +1171,7 @@ class CSVAnalyzerApp:
         )
         self.dsl_tokens_entry.pack(side="left", padx=(0, 20))
 
-        # 상위 K개 결과 설정
+        # 상위 K개 Result Configuration
         topk_label = tk.Label(
             settings_frame,
             text="상위 결과 수:",
@@ -1191,11 +1191,11 @@ class CSVAnalyzerApp:
         )
         topk_entry.pack(side="left")
 
-        # 결과 표시 영역
+        # Result 표시 영역
         result_frame = tk.Frame(main_container, bg=self.current_theme["panel_bg"])
         result_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 결과 텍스트 위젯 (스크롤 포함)
+        # Result 텍스트 위젯 (스크롤 Include)
         text_frame = tk.Frame(result_frame)
         text_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -1217,14 +1217,14 @@ class CSVAnalyzerApp:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.combinations_result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # 초기 안내 메시지
+        # 초기 안내 Message
         initial_message = """
-📊 조합 분석 도구
+📊 Combinations analysis Tool
 
-이 도구는 데이터의 컬럼 간 관계를 자동으로 분석합니다:
+이 Tool는 Data의 Column 간 관계를 Automatic으로 분석합니다:
 
 🔢 수치형 분석: 
-   • 상관관계 분석
+   • Correlation analysis
    • 피어슨 상관계수
    
 📊 범주형 분석:
@@ -1234,25 +1234,25 @@ class CSVAnalyzerApp:
    
 🔀 혼합형 분석:
    • ANOVA 분석
-   • 효과 크기 계산
+   • 효과 Size 계산
 
-사용법:
-1. 데이터를 먼저 로드하세요
-2. 필요시 DSL 토큰을 입력하세요 (예: C1,C2,C3)
-3. '분석 실행' 버튼을 클릭하세요
+Usage:
+1. Data를 먼저 Load하세요
+2. 필요시 DSL token을 Input하세요 (Yes: C1,C2,C3)
+3. 'Run analysis' 버튼을 클릭하세요
 
-분석 결과는 아래에 표시됩니다.
+Analysis results는 아래에 표시됩니다.
         """
         self.combinations_result_text.insert(1.0, initial_message)
         self.combinations_result_text.config(state=tk.DISABLED)
 
     def run_combinations_analysis(self):
-        """조합 분석 실행 (백그라운드 스레드 사용)"""
+        """조합 Run analysis (Background Thread Use)"""
         if self.state.df is None:
             self.show_toast("데이터를 먼저 로드해주세요", "error")
             return
 
-        # 분석 중 상태 표시
+        # 분석 중 State 표시
         self.run_combinations_btn.config(text="분석 중...", state="disabled")
         self.combinations_result_text.config(state=tk.NORMAL)
         self.combinations_result_text.delete(1.0, tk.END)
@@ -1260,7 +1260,7 @@ class CSVAnalyzerApp:
         self.combinations_result_text.config(state=tk.DISABLED)
         self.root.update()
 
-        # DSL 토큰 파싱
+        # DSL token 파싱
         dsl_tokens = None
         if self.dsl_tokens_entry.get().strip():
             dsl_tokens = [
@@ -1272,7 +1272,7 @@ class CSVAnalyzerApp:
         except ValueError:
             top_k = 10
 
-        # 백그라운드 스레드에서 실행될 함수
+        # Background Thread에서 Execution될 Function
         def run_analysis():
             from src.core.combinations import (
                 AdvancedCombinationsAnalyzer,
@@ -1281,26 +1281,26 @@ class CSVAnalyzerApp:
 
             config = AnalysisConfig(
                 top_k=top_k,
-                parallel_processing=True,  # 백그라운드에서 병렬 처리 사용
+                parallel_processing=True,  # Background에서 Parallel Processing Use
                 enable_caching=True,
             )
 
-            # 분석 실행
+            # Run analysis
             analyzer = AdvancedCombinationsAnalyzer(config)
             results = analyzer.analyze_all_combinations(self.state.df, dsl_tokens)
 
-            # 결과 포맷팅
+            # Result 포맷팅
             summary = analyzer.get_analysis_summary(results)
             detailed_results = self.format_detailed_results(results)
 
             return (summary, detailed_results)
 
-        # 완료 콜백
+        # Complete 콜백
         def on_complete(result):
             try:
                 if result.success:
                     summary, detailed = result.data
-                    # 텍스트 위젯에 결과 표시
+                    # 텍스트 위젯에 Result 표시
                     self.combinations_result_text.config(state=tk.NORMAL)
                     self.combinations_result_text.delete(1.0, tk.END)
                     self.combinations_result_text.insert(
@@ -1309,7 +1309,7 @@ class CSVAnalyzerApp:
                     self.combinations_result_text.config(state=tk.DISABLED)
                     self.show_toast("분석이 완료되었습니다", "ok")
                 else:
-                    # 오류 처리
+                    # Error Processing
                     self.combinations_result_text.config(state=tk.NORMAL)
                     self.combinations_result_text.delete(1.0, tk.END)
                     self.combinations_result_text.insert(
@@ -1318,17 +1318,17 @@ class CSVAnalyzerApp:
                     self.combinations_result_text.config(state=tk.DISABLED)
                     self.show_toast(f"분석 실패: {result.error}", "error")
             finally:
-                # 버튼 상태 복원
+                # 버튼 State Restore
                 self.run_combinations_btn.config(text="분석 실행", state="normal")
 
-        # 백그라운드 태스크 실행
+        # Background 태스크 Execution
         self.task_manager.run_task(run_analysis, on_complete)
 
     def format_detailed_results(self, results):
-        """상세 결과 포맷팅"""
+        """상세 Result 포맷팅"""
         detailed = ["=" * 60, "📈 상세 분석 결과", "=" * 60, ""]
 
-        # 수치형 조합 결과
+        # 수치형 조합 Result
         if (
             "numerical_combinations" in results
             and "error" not in results["numerical_combinations"]
@@ -1346,7 +1346,7 @@ class CSVAnalyzerApp:
                 detailed.append(f"   방향: {corr['direction']}")
                 detailed.append("")
 
-        # 범주형 조합 결과
+        # 범주형 조합 Result
         if (
             "categorical_combinations" in results
             and "error" not in results["categorical_combinations"]
@@ -1364,7 +1364,7 @@ class CSVAnalyzerApp:
                 )
                 detailed.append("")
 
-        # 혼합형 조합 결과
+        # 혼합형 조합 Result
         if (
             "mixed_combinations" in results
             and "error" not in results["mixed_combinations"]
@@ -1388,11 +1388,11 @@ class CSVAnalyzerApp:
         return "\n".join(detailed)
 
     def build_preview_tab(self):
-        """데이터 미리보기 탭"""
+        """Data preview 탭"""
         preview_frame = ttk.Frame(self.notebook)
         self.notebook.add(preview_frame, text="Data Preview")
 
-        # 미리보기 라벨과 행 수 정보
+        # 미리보기 라벨과 Row 수 Information
         header_frame = tk.Frame(preview_frame, bg=self.current_theme["panel_bg"])
         header_frame.pack(fill="x", padx=10, pady=(10, 5))
 
@@ -1414,7 +1414,7 @@ class CSVAnalyzerApp:
         )
         self.row_count_label.pack(side="right")
 
-        # 테이블 프레임
+        # Table 프레임
         table_frame = tk.Frame(preview_frame, bg=self.current_theme["panel_bg"])
         table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
@@ -1422,7 +1422,7 @@ class CSVAnalyzerApp:
         tree_container = tk.Frame(table_frame)
         tree_container.pack(fill=tk.BOTH, expand=True)
 
-        # Treeview 생성 (show 옵션과 height 명시적 설정)
+        # Treeview Create (show Options과 height 명시적 Configuration)
         self.preview_tree = ttk.Treeview(
             tree_container, show="tree headings", height=25
         )
@@ -1448,7 +1448,7 @@ class CSVAnalyzerApp:
         tree_container.grid_columnconfigure(0, weight=1)
 
     def build_analysis_tab(self):
-        """분석 탭 - 시각화 포함"""
+        """분석 탭 - Visualization Include"""
         analysis_frame = ttk.Frame(self.notebook)
         self.notebook.add(analysis_frame, text="Analysis")
 
@@ -1456,7 +1456,7 @@ class CSVAnalyzerApp:
         control_frame = tk.Frame(analysis_frame, bg=self.current_theme["panel_bg"])
         control_frame.pack(fill="x", padx=10, pady=10)
 
-        # 컬럼 선택
+        # Column Optional
         self.column_var = tk.StringVar()
         self.column_combo = ttk.Combobox(
             control_frame,
@@ -1472,7 +1472,7 @@ class CSVAnalyzerApp:
         )
         analyze_btn.pack(side="left", padx=(0, 10))
 
-        # 시각화 버튼
+        # Visualization 버튼
         visualize_btn = self.create_styled_button(
             control_frame, "Create Visualization", self.create_visualization, "#E74C3C"
         )
@@ -1482,11 +1482,11 @@ class CSVAnalyzerApp:
         main_paned = ttk.PanedWindow(analysis_frame, orient="horizontal")
         main_paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        # 왼쪽: 분석 결과 텍스트
+        # 왼쪽: Analysis results 텍스트
         left_frame = tk.Frame(main_paned, bg=self.current_theme["panel_bg"])
         main_paned.add(left_frame, weight=1)
 
-        # 분석 결과 라벨
+        # Analysis results 라벨
         result_label = tk.Label(
             left_frame,
             text="Analysis Results",
@@ -1496,7 +1496,7 @@ class CSVAnalyzerApp:
         )
         result_label.pack(anchor="w", pady=(0, 5))
 
-        # 스크롤 가능한 텍스트 영역
+        # 스크롤 Available한 텍스트 영역
         text_container = tk.Frame(left_frame, bg=self.current_theme["panel_bg"])
         text_container.pack(fill=tk.BOTH, expand=True)
 
@@ -1515,11 +1515,11 @@ class CSVAnalyzerApp:
         self.analysis_text.pack(side="left", fill=tk.BOTH, expand=True)
         text_scrollbar.pack(side="right", fill="y")
 
-        # 오른쪽: 시각화 영역
+        # 오른쪽: Visualization 영역
         right_frame = tk.Frame(main_paned, bg=self.current_theme["panel_bg"])
         main_paned.add(right_frame, weight=1)
 
-        # 시각화 라벨
+        # Visualization 라벨
         viz_label = tk.Label(
             right_frame,
             text="Visualization",
@@ -1529,19 +1529,19 @@ class CSVAnalyzerApp:
         )
         viz_label.pack(anchor="w", pady=(0, 5))
 
-        # 시각화 캔버스 영역
+        # Visualization 캔버스 영역
         self.viz_frame = tk.Frame(
             right_frame, bg=self.current_theme["panel_bg"], relief="sunken", bd=1
         )
         self.viz_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 초기 메시지
+        # 초기 Message
         self.analysis_text.insert(
             "1.0", "Select a column and click 'Analyze Column' to view statistics."
         )
         self.analysis_text.configure(state="disabled")
 
-        # 초기 시각화 메시지
+        # 초기 Visualization Message
         initial_viz_label = tk.Label(
             self.viz_frame,
             text="Select a column and click 'Create Visualization'\nto generate charts.",
@@ -1552,7 +1552,7 @@ class CSVAnalyzerApp:
         initial_viz_label.pack(expand=True)
 
     def show_toast(self, message: str, kind: str = "info"):
-        """토스트 메시지 표시"""
+        """Toast message 표시"""
         if self.toast:
             try:
                 self.toast.close()
@@ -1561,13 +1561,13 @@ class CSVAnalyzerApp:
         self.toast = ToastWindow(self.root, message, kind, self.is_dark_mode)
 
     def begin_busy(self, status_text: str = "Working..."):
-        """로딩 상태 시작"""
+        """로딩 State Start"""
         self.status_label.config(text=status_text)
         self.load_btn.config(state="disabled")
         self.animate_spinner()
 
     def end_busy(self, done_text: str = "Done", ok: bool = True):
-        """로딩 상태 종료"""
+        """로딩 State Exit"""
         self.status_label.config(text=done_text)
         self.load_btn.config(state="normal")
         self.stop_spinner()
@@ -1584,14 +1584,14 @@ class CSVAnalyzerApp:
         self.busy_after_id = self.root.after(500, self.animate_spinner)
 
     def stop_spinner(self):
-        """스피너 중지"""
+        """스피너 Stop"""
         if self.busy_after_id:
             self.root.after_cancel(self.busy_after_id)
             self.busy_after_id = None
         self.spinner_label.config(text="")
 
     def load_csv_file(self):
-        """CSV 파일 로드 다이얼로그"""
+        """CSV File Load 다이얼로그"""
         file_path = filedialog.askopenfilename(
             title="Select CSV file",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
@@ -1601,7 +1601,7 @@ class CSVAnalyzerApp:
             self.load_csv(file_path)
 
     def load_csv(self, file_path: str):
-        """CSV 파일 로드 (청킹 및 슬라이싱 적용)"""
+        """CSV File Load (청킹 및 슬라이싱 적용)"""
         if not file_path.lower().endswith(".csv"):
             self.show_toast("Error: Not a CSV file", "error")
             return
@@ -1610,21 +1610,21 @@ class CSVAnalyzerApp:
 
         def load_thread():
             try:
-                # 큰 파일 처리를 위한 청킹
-                chunk_size = 50000  # 50K로 증가
+                # 큰 File Processing를 위한 청킹
+                chunk_size = 50000  # 50K로 Increase
                 chunks = []
                 total_rows = 0
 
-                # 파일 크기 체크
+                # File Size 체크
                 file_size = Path(file_path).stat().st_size
-                if file_size > 100 * 1024 * 1024:  # 100MB 이상 (기준 상향)
-                    # 샘플링 로드 (처음 50000행으로 증가)
+                if file_size > 100 * 1024 * 1024:  # 100MB or more (기준 상향)
+                    # 샘플링 Load (처음 50000Row으로 Increase)
                     self.state.df = pd.read_csv(file_path, nrows=50000)
                     self.root.after(
                         0, lambda: self.on_csv_loaded(file_path, is_sample=True)
                     )
                 else:
-                    # 전체 로드
+                    # All Load
                     self.state.df = pd.read_csv(file_path)
                     self.root.after(
                         0, lambda: self.on_csv_loaded(file_path, is_sample=False)
@@ -1640,8 +1640,8 @@ class CSVAnalyzerApp:
         threading.Thread(target=load_thread, daemon=True).start()
 
     def on_csv_loaded(self, file_path: str, is_sample: bool = False):
-        """CSV 로드 완료"""
-        # 통계 업데이트 (테마 색상도 함께 적용)
+        """CSV Load Complete"""
+        # Statistics Update (테마 색상도 함께 적용)
         self.rows_label.config(
             text=f"{len(self.state.df):,}" + (" (sample)" if is_sample else ""),
             bg=self.current_theme["panel_bg"],
@@ -1658,15 +1658,15 @@ class CSVAnalyzerApp:
             fg=self.current_theme["text_color"],
         )
 
-        # 컬럼 콤보박스 업데이트
+        # Column 콤보박스 Update
         self.column_combo["values"] = list(self.state.df.columns)
-        if len(self.state.df.columns) > 0:  # 수정: .empty 대신 len() 사용
+        if len(self.state.df.columns) > 0:  # Modify: .empty instead len() Use
             self.column_combo.current(0)
 
-        # 슬라이서 탭의 컬럼 체크박스 업데이트
+        # 슬라이서 탭의 Column 체크박스 Update
         self.update_column_checkboxes()
 
-        # 미리보기 테이블 업데이트 (슬라이싱 적용)
+        # 미리보기 Table Update (슬라이싱 적용)
         self.update_preview_table()
 
         file_name = Path(file_path).name
@@ -1674,12 +1674,12 @@ class CSVAnalyzerApp:
         self.end_busy(status_msg, True)
 
     def on_csv_error(self, error_msg: str):
-        """CSV 로드 오류"""
+        """CSV Load Error"""
         self.end_busy(f"Failed to load: {error_msg}", False)
 
     def update_preview_table(self):
-        """미리보기 테이블 업데이트 (슬라이싱 적용)"""
-        # 기존 데이터 제거
+        """미리보기 Table Update (슬라이싱 적용)"""
+        # 기존 Data Remove
         for item in self.preview_tree.get_children():
             self.preview_tree.delete(item)
 
@@ -1687,23 +1687,23 @@ class CSVAnalyzerApp:
             self.row_count_label.config(text="No data loaded")
             return
 
-        # 컬럼 설정
+        # Column Configuration
         columns = list(self.state.df.columns)
 
-        # Treeview 컬럼 설정
+        # Treeview Column Configuration
         self.preview_tree["columns"] = columns
-        self.preview_tree["show"] = "tree headings"  # 헤더 표시 확실히 설정
+        self.preview_tree["show"] = "tree headings"  # Header 표시 확실히 Configuration
 
-        # 인덱스 컬럼 설정
+        # 인덱스 Column Configuration
         self.preview_tree.heading("#0", text="Index", anchor="w")
         self.preview_tree.column("#0", width=60, anchor="w", minwidth=60)
 
-        # 데이터 컬럼들 설정
+        # Data Column들 Configuration
         for col in columns:
             self.preview_tree.heading(col, text=col, anchor="w")
             self.preview_tree.column(col, width=120, anchor="w", minwidth=80)
 
-        # 데이터 추가 (1000행으로 제한 - 슬라이싱 증가)
+        # Data Add (1000Row으로 제한 - 슬라이싱 Increase)
         preview_data = self.state.df.head(1000)
 
         for idx, row in preview_data.iterrows():
@@ -1721,16 +1721,16 @@ class CSVAnalyzerApp:
         total_loaded = len(self.state.df)
         preview_shown = len(preview_data)
 
-        # 행 수 정보 업데이트
+        # Row 수 Information Update
         self.row_count_label.config(
             text=f"Showing {preview_shown:,} of {total_loaded:,} rows"
         )
 
-        # Treeview 업데이트 강제
+        # Treeview Update 강제
         self.preview_tree.update_idletasks()
 
     def analyze_column(self):
-        """컬럼 분석"""
+        """Column 분석"""
         if self.state.df is None:
             self.show_toast("No data loaded", "warn")
             return
@@ -1743,7 +1743,7 @@ class CSVAnalyzerApp:
         try:
             info = column_profile(self.state.df, column)
 
-            # 분석 결과 표시
+            # Analysis results 표시
             self.analysis_text.configure(state="normal")
             self.analysis_text.delete("1.0", "end")
 
@@ -1751,11 +1751,11 @@ class CSVAnalyzerApp:
             self.analysis_text.insert("end", f"Analysis for: {column}\n", "title")
             self.analysis_text.insert("end", "=" * 50 + "\n\n")
 
-            # 통계 테이블
+            # Statistics Table
             for key, value in info.items():
                 self.analysis_text.insert("end", f"{key:<15}: {value}\n")
 
-            # 샘플 데이터 (슬라이싱 적용)
+            # 샘플 Data (슬라이싱 적용)
             self.analysis_text.insert("end", f"\nSample values (first 50):\n")
             self.analysis_text.insert("end", "-" * 30 + "\n")
             sample_values = self.state.df[column].dropna().head(50)
@@ -1771,7 +1771,7 @@ class CSVAnalyzerApp:
             self.show_toast(f"Failed to analyze: {e}", "error")
 
     def create_visualization(self):
-        """선택된 컬럼의 시각화 생성"""
+        """Optional된 Column의 Visualization Create"""
         if self.state.df is None or self.state.df.empty:
             self.show_toast("No data loaded", "error")
             return
@@ -1782,20 +1782,20 @@ class CSVAnalyzerApp:
             return
 
         try:
-            # 기존 시각화 제거
+            # 기존 Visualization Remove
             for widget in self.viz_frame.winfo_children():
                 widget.destroy()
 
-            # matplotlib 한글 폰트 설정
+            # matplotlib 한글 폰트 Configuration
             plt.rcParams["font.family"] = ["Malgun Gothic", "DejaVu Sans"]
             plt.rcParams["axes.unicode_minus"] = False
 
-            # 다크모드에 따른 색상 설정
+            # 다크Mode에 according to 색상 Configuration
             current_theme = (
                 self.themes["dark"] if self.is_dark_mode else self.themes["light"]
             )
 
-            # Figure 생성 및 테마 적용
+            # Figure Create 및 테마 적용
             fig, axes = plt.subplots(2, 2, figsize=(8, 6))
 
             if self.is_dark_mode:
@@ -1819,7 +1819,7 @@ class CSVAnalyzerApp:
             data = self.state.df[column].dropna()
 
             if pd.api.types.is_numeric_dtype(data):
-                # 수치형 데이터 시각화
+                # 수치형 Data Visualization
 
                 # 각 서브플롯에 테마 적용
                 for ax in axes.flat:
@@ -1865,7 +1865,7 @@ class CSVAnalyzerApp:
                     "Line Plot (First 100)", fontsize=10, color=text_color
                 )
 
-                # 4. 기술통계
+                # 4. 기술Statistics
                 stats_text = f"Mean: {data.mean():.2f}\nMedian: {data.median():.2f}\nStd: {data.std():.2f}\nMin: {data.min():.2f}\nMax: {data.max():.2f}"
                 axes[1, 1].text(
                     0.1,
@@ -1882,7 +1882,7 @@ class CSVAnalyzerApp:
                     axes[1, 1].set_facecolor("#2B2B2B")
 
             else:
-                # 범주형 데이터 시각화
+                # 범주형 Data Visualization
                 value_counts = data.value_counts().head(10)
 
                 # 각 서브플롯에 테마 적용
@@ -1929,7 +1929,7 @@ class CSVAnalyzerApp:
                 )
                 axes[1, 0].set_title("Horizontal Bar", fontsize=10, color=text_color)
 
-                # 4. 통계
+                # 4. Statistics
                 stats_text = f"Unique: {data.nunique()}\nMost frequent: {data.mode().iloc[0] if len(data.mode()) > 0 else 'N/A'}\nTotal: {len(data)}"
                 axes[1, 1].text(
                     0.1,
@@ -1947,7 +1947,7 @@ class CSVAnalyzerApp:
 
             plt.tight_layout()
 
-            # tkinter에 matplotlib 캔버스 추가
+            # tkinter에 matplotlib 캔버스 Add
             canvas = FigureCanvasTkAgg(fig, self.viz_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
@@ -1974,7 +1974,7 @@ class CSVAnalyzerApp:
         )
         title_label.pack(anchor="w", pady=(0, 10))
 
-        # 행 범위 설정
+        # Row 범위 Configuration
         row_frame = tk.Frame(control_frame, bg=self.current_theme["panel_bg"])
         row_frame.pack(fill="x", pady=5)
 
@@ -2019,7 +2019,7 @@ class CSVAnalyzerApp:
         )
         end_entry.pack(side="left")
 
-        # 컬럼 선택
+        # Column Optional
         col_frame = tk.Frame(control_frame, bg=self.current_theme["panel_bg"])
         col_frame.pack(fill="x", pady=5)
 
@@ -2031,7 +2031,7 @@ class CSVAnalyzerApp:
             fg=self.current_theme["text_color"],
         ).pack(side="left")
 
-        # 컬럼 선택 프레임
+        # Column Optional 프레임
         self.column_selection_frame = tk.Frame(
             col_frame, bg=self.current_theme["panel_bg"]
         )
@@ -2051,17 +2051,17 @@ class CSVAnalyzerApp:
         )
         export_btn.pack(side="left")
 
-        # 슬라이싱 결과 영역
+        # 슬라이싱 Result 영역
         result_frame = tk.Frame(slicer_frame, bg=self.current_theme["panel_bg"])
         result_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        # 결과 테이블
+        # Result Table
         self.slice_tree_container = tk.Frame(
             result_frame, bg=self.current_theme["panel_bg"]
         )
         self.slice_tree_container.pack(fill=tk.BOTH, expand=True)
 
-        # 슬라이싱된 데이터용 Treeview
+        # 슬라이싱된 Data용 Treeview
         self.slice_tree = ttk.Treeview(
             self.slice_tree_container, show="tree headings", height=15
         )
@@ -2089,7 +2089,7 @@ class CSVAnalyzerApp:
         self.slice_tree_container.grid_columnconfigure(0, weight=1)
 
     def update_column_checkboxes(self):
-        """컬럼 체크박스 업데이트"""
+        """Column 체크박스 Update"""
         for widget in self.column_selection_frame.winfo_children():
             widget.destroy()
 
@@ -2097,7 +2097,7 @@ class CSVAnalyzerApp:
             self.column_vars = {}
             columns = list(self.state.df.columns)
 
-            # 전체 선택/해제 버튼
+            # All Optional/해제 버튼
             select_frame = tk.Frame(
                 self.column_selection_frame, bg=self.current_theme["panel_bg"]
             )
@@ -2116,7 +2116,7 @@ class CSVAnalyzerApp:
                 command=self.deselect_all_columns,
             ).pack(side="left")
 
-            # 컬럼별 체크박스 (최대 10개만 표시)
+            # Column별 체크박스 (최대 10개만 표시)
             for col in columns[:10]:
                 var = tk.BooleanVar(value=True)
                 self.column_vars[col] = var
@@ -2178,7 +2178,7 @@ class CSVAnalyzerApp:
             self.show_toast(f"Failed to slice: {e}", "error")
 
     def update_slice_table(self, data):
-        """슬라이싱 결과 테이블 업데이트"""
+        """슬라이싱 Result Table Update"""
         for item in self.slice_tree.get_children():
             self.slice_tree.delete(item)
 
@@ -2204,7 +2204,7 @@ class CSVAnalyzerApp:
             self.slice_tree.insert("", "end", text=str(idx), values=values)
 
     def export_sliced_data(self):
-        """슬라이싱된 데이터 내보내기"""
+        """슬라이싱된 Data Export"""
         if not hasattr(self, "current_sliced_data"):
             self.show_toast("No sliced data to export", "error")
             return
@@ -2226,41 +2226,41 @@ class CSVAnalyzerApp:
     def display_data_paginated(
         self, df: pd.DataFrame, page: int = 0, page_size: int = 1000
     ):
-        """페이지네이션으로 대용량 데이터 효율적 표시"""
+        """페이지네이션으로 Large Data Efficient 표시"""
         if df is None or df.empty:
             return
 
         start_idx = page * page_size
         end_idx = min(start_idx + page_size, len(df))
 
-        # 현재 페이지 데이터만 표시
+        # 현재 페이지 Data만 표시
         page_data = df.iloc[start_idx:end_idx]
 
-        # 캐시 키 생성
+        # Cache 키 Create
         cache_key = f"page_{page}_{page_size}_{hash(str(df.columns.tolist()))}"
         cached_data = self.data_cache.get(cache_key)
 
         if cached_data is not None:
-            # 캐시된 데이터 사용
+            # Cache된 Data Use
             display_data = cached_data
         else:
-            # 새로 처리 및 캐시에 저장
+            # 새로 Processing 및 Cache에 Save
             display_data = page_data.copy()
             self.data_cache.set(cache_key, display_data)
 
-        # Treeview 업데이트 (기존 데이터 클리어 후 추가)
+        # Treeview Update (기존 Data 클리어 후 Add)
         if hasattr(self, "preview_tree"):
             for item in self.preview_tree.get_children():
                 self.preview_tree.delete(item)
 
-            # 컬럼 헤더 설정 (최초 1회만)
+            # Column Header Configuration (최초 1회만)
             if not self.preview_tree.get_children():
                 self.preview_tree["columns"] = list(display_data.columns)
                 for col in display_data.columns:
                     self.preview_tree.heading(col, text=col)
                     self.preview_tree.column(col, width=min(150, len(str(col)) * 10))
 
-            # 데이터 행 추가 (최적화된 방식)
+            # Data Row Add (Optimization된 방식)
             for idx, row in display_data.iterrows():
                 values = []
                 for val in row:
@@ -2272,7 +2272,7 @@ class CSVAnalyzerApp:
                         values.append(str(val))
                 self.preview_tree.insert("", "end", values=values)
 
-            # 페이지 정보 업데이트
+            # 페이지 Information Update
             if hasattr(self, "row_count_label"):
                 total_rows = len(df)
                 self.row_count_label.config(
@@ -2280,7 +2280,7 @@ class CSVAnalyzerApp:
                 )
 
     def animate_spinner_optimized(self):
-        """최적화된 스피너 애니메이션"""
+        """Optimization된 스피너 애니메이션"""
         if not hasattr(self, "_spinner_active"):
             self._spinner_active = False
 
@@ -2295,11 +2295,11 @@ class CSVAnalyzerApp:
             next_pattern = patterns[(current_idx + 1) % len(patterns)]
             self.spinner_label.config(text=next_pattern)
 
-        # 100ms 간격으로 최적화 (기존 50ms에서 증가)
+        # 100ms 간격으로 Optimization (기존 50ms에서 Increase)
         self.root.after(100, self.animate_spinner_optimized)
 
     def start_spinner(self):
-        """스피너 시작"""
+        """스피너 Start"""
         self._spinner_active = True
         if hasattr(self, "spinner_label"):
             self.spinner_label.config(text="⠋")
@@ -2312,8 +2312,8 @@ class CSVAnalyzerApp:
             self.spinner_label.config(text="")
 
     def show_toast(self, message: str, kind: str = "info"):
-        """토스트 메시지 표시"""
-        # 간단한 메시지 박스로 대체
+        """Toast message 표시"""
+        # 간단한 Message 박스로 대체
         if kind == "error":
             messagebox.showerror("Error", message)
         elif kind == "success" or kind == "ok":
@@ -2326,7 +2326,7 @@ def main():
     root = tk.Tk()
     app = CSVAnalyzerApp(root)
 
-    # 윈도우 닫기 이벤트
+    # 윈도우 Close 이벤트
     def on_closing():
         if app.busy_after_id:
             root.after_cancel(app.busy_after_id)

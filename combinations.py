@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """
-통합 조합 분석 모듈 (combinations.py)
+통합 Combinations analysis Module (combinations.py)
 
-이 모듈은 데이터프레임의 컬럼 간 관계를 종합적으로 분석합니다.
-- 수치형 컬럼 간 상관관계 분석 (Pearson, Spearman)
-- 범주형 컬럼 간 연관규칙 분석 (Cramér's V, Theil's U, 카이제곱 검정)
+이 Module은 Data프레임의 Column 간 관계를 종합적으로 분석합니다.
+- 수치형 Column 간 Correlation analysis (Pearson, Spearman)
+- 범주형 Column 간 연관규칙 분석 (Cramér's V, Theil's U, 카이제곱 검정)
 - 수치형-범주형 간 ANOVA 및 Kruskal-Wallis 분석
-- 성능 모니터링 및 고도화된 메모리 최적화
-- Joblib 기반 병렬 처리 및 캐싱
+- Performance 모니터링 및 고도화된 Memory Optimization
+- Joblib based Parallel Processing 및 캐싱
 
-사용법:
-    # Python 모듈로 사용
+Usage:
+    # Python Module로 Use
     from combinations import AdvancedCombinationsAnalyzer
     analyzer = AdvancedCombinationsAnalyzer()
     results = analyzer.analyze_all_combinations(df)
 
-    # CLI로 사용
+    # CLI로 Use
     python combinations.py --file data.csv --output results.json
 """
 
@@ -37,7 +37,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-# 필수/선택적 의존성
+# Required/Optional적 의존성
 try:
     import psutil
 
@@ -59,14 +59,14 @@ try:
 except ImportError:
     HAS_JOBLIB = False
 
-# 로깅 설정
+# Logging Configuration
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
 @dataclass
 class AnalysisConfig:
-    """분석 설정 클래스"""
+    """Analysis configuration Class"""
 
     max_cardinality: int = 50
     top_k: int = 20
@@ -76,16 +76,16 @@ class AnalysisConfig:
     lift_threshold: float = 1.5
     eta2_threshold: float = 0.1
     parallel_processing: bool = True
-    n_jobs: int = -1  # -1: 모든 CPU 코어 사용
+    n_jobs: int = -1  # -1: 모든 CPU 코어 Use
     enable_caching: bool = True
     cache_dir: str = ".analysis_cache"
     memory_optimization: bool = True
-    advanced_stats: bool = True  # Theil's U, Spearman 등 고급 통계 사용 여부
+    advanced_stats: bool = True  # Theil's U, Spearman 등 고급 Statistics Use 여부
 
 
 @dataclass
 class PerformanceMetrics:
-    """성능 메트릭 클래스"""
+    """Performance Metrics Class"""
 
     start_time: float
     end_time: float = None
@@ -100,14 +100,14 @@ class PerformanceMetrics:
 
 
 class PerformanceMonitor:
-    """성능 모니터링 클래스"""
+    """Performance 모니터링 Class"""
 
     def __init__(self):
         self.metrics_history: List[PerformanceMetrics] = []
 
     @contextmanager
     def track_operation(self, operation_name: str):
-        """작업 수행 시간 추적"""
+        """Task 수Row 시간 추적"""
         start_time = time.time()
         start_memory = psutil.virtual_memory().used if HAS_PSUTIL else 0
 
@@ -136,7 +136,7 @@ class PerformanceMonitor:
             logger.info(f"{operation_name} 완료: {metrics.duration:.2f}초")
 
     def get_performance_report(self) -> Dict[str, Any]:
-        """성능 보고서 생성"""
+        """Performance 보고서 Create"""
         if not self.metrics_history:
             return {"error": "no_metrics_available"}
 
@@ -157,14 +157,14 @@ class PerformanceMonitor:
 
 
 class MemoryOptimizer:
-    """고도화된 메모리 최적화 클래스"""
+    """고도화된 Memory Optimization Class"""
 
     @staticmethod
     def optimize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-        """데이터프레임 메모리 최적화 (Downcasting & Smart Categorization)"""
+        """Data프레임 Memory Optimization (Downcasting & Smart Categorization)"""
         optimized_df = df.copy()
 
-        # 1. 수치형 데이터 다운캐스팅
+        # 1. 수치형 Data 다운캐스팅
         for col in optimized_df.select_dtypes(include=["int", "float"]).columns:
             try:
                 optimized_df[col] = pd.to_numeric(optimized_df[col], downcast="integer")
@@ -178,16 +178,16 @@ class MemoryOptimizer:
             except:
                 pass
 
-        # 2. 객체형(문자열) 데이터 최적화
+        # 2. 객체형(문자열) Data Optimization
         for col in optimized_df.select_dtypes(include=["object"]).columns:
             try:
                 num_unique = optimized_df[col].nunique()
                 num_total = len(optimized_df)
 
-                # 카테고리 변환 조건: 고유값 비율이 50% 미만이고, 고유값이 아주 많지 않은 경우
+                # 카테고리 변환 조건: UniqueValue Ratio이 Less than 50%이고, UniqueValue이 아주 많지 않은 경우
                 if num_unique / num_total < 0.5:
-                    # 추가 조건: 평균 문자열 길이가 짧은 경우에만 변환 (메모리 오버헤드 방지)
-                    # 샘플링하여 평균 길이 측정
+                    # Add 조건: Average 문자열 길이가 짧은 경우에만 변환 (Memory 오버헤드 방지)
+                    # 샘플링하여 Average 길이 측정
                     sample = optimized_df[col].dropna().sample(min(1000, num_total))
                     if sample.empty:
                         continue
@@ -205,7 +205,7 @@ class MemoryOptimizer:
 
     @staticmethod
     def get_memory_usage_info(df: pd.DataFrame) -> Dict[str, Any]:
-        """메모리 사용량 정보"""
+        """Memory Use량 Information"""
         memory_usage = df.memory_usage(deep=True)
         total_memory = memory_usage.sum()
 
@@ -222,17 +222,17 @@ class MemoryOptimizer:
 
     @staticmethod
     def _calculate_optimization_potential(df: pd.DataFrame) -> str:
-        """최적화 잠재력 계산"""
+        """Optimization 잠재력 계산"""
         try:
             original_memory = df.memory_usage(deep=True).sum()
-            # 실제 변환하지 않고 추정만 하거나, 샘플로 테스트
+            # 실제 변환하지 않고 추정만 하거나, 샘플로 Test
             return "high" if original_memory > 100 * 1024 * 1024 else "low"
         except Exception:
             return "unknown"
 
 
 class AnalysisCache:
-    """압축 및 Pickle을 지원하는 고급 캐시 클래스"""
+    """압축 및 Pickle을 Support하는 고급 Cache Class"""
 
     def __init__(self, cache_dir: str = ".analysis_cache", max_age_hours: int = 24):
         self.cache_dir = Path(cache_dir)
@@ -242,7 +242,7 @@ class AnalysisCache:
     def get_cache_key(
         self, df_hash: str, analysis_type: str, params: Dict[str, Any]
     ) -> str:
-        """캐시 키 생성"""
+        """Cache 키 Create"""
         params_str = json.dumps(params, sort_keys=True, default=str)
         key = hashlib.md5(
             f"{df_hash}_{analysis_type}_{params_str}".encode()
@@ -250,13 +250,13 @@ class AnalysisCache:
         return key
 
     def get(self, key: str) -> Optional[Any]:
-        """캐시에서 데이터 가져오기 (gzip + pickle)"""
+        """Cache에서 Data Import (gzip + pickle)"""
         cache_file = self.cache_dir / f"{key}.pkl.gz"
 
         if not cache_file.exists():
             return None
 
-        # 캐시 파일 나이 확인
+        # Cache File 나이 Confirmation
         file_age_hours = (time.time() - cache_file.stat().st_mtime) / 3600
         if file_age_hours > self.max_age_hours:
             try:
@@ -273,7 +273,7 @@ class AnalysisCache:
             return None
 
     def set(self, key: str, data: Any):
-        """데이터를 캐시에 저장 (gzip + pickle)"""
+        """Data를 Cache에 Save (gzip + pickle)"""
         cache_file = self.cache_dir / f"{key}.pkl.gz"
         try:
             with gzip.open(cache_file, "wb") as f:
@@ -282,7 +282,7 @@ class AnalysisCache:
             logger.warning(f"캐시 저장 실패: {e}")
 
     def clear_expired(self):
-        """만료된 캐시 파일들 정리"""
+        """만료된 Cache File들 Cleanup"""
         current_time = time.time()
         for cache_file in self.cache_dir.glob("*.pkl.gz"):
             try:
@@ -293,7 +293,7 @@ class AnalysisCache:
                 pass
 
 
-# --- 통계 분석 헬퍼 함수 (병렬 처리를 위해 클래스 외부로 분리) ---
+# --- Statistical analysis Helper Function (Parallel Processing를 for Class 외부로 분리) ---
 
 
 def calculate_theils_u(x, y):
@@ -322,7 +322,7 @@ def conditional_entropy(x, y):
 
 
 def process_categorical_pair(df_subset, col1, col2, config_dict):
-    """범주형 쌍 분석 (병렬 처리용)"""
+    """범주형 쌍 분석 (Parallel Processing용)"""
     try:
         crosstab = pd.crosstab(df_subset[col1], df_subset[col2])
 
@@ -339,8 +339,8 @@ def process_categorical_pair(df_subset, col1, col2, config_dict):
             chi2, p_value, cramers_v, theils_u = 0, 1, 0, 0
 
         # 연관 규칙 (Lift)
-        rules = []  # _calculate_association_rules 로직 인라인화 또는 간소화
-        # (성능을 위해 여기서는 생략하거나 필요시 추가)
+        rules = []  # _calculate_association_rules 로직 인라인화 or 간소화
+        # (Performance을 for 여기서는 생략하거나 필요시 Add)
 
         return {
             "column1": col1,
@@ -356,7 +356,7 @@ def process_categorical_pair(df_subset, col1, col2, config_dict):
 
 
 def process_mixed_pair(df_subset, num_col, cat_col, config_dict):
-    """혼합형 쌍 분석 (병렬 처리용)"""
+    """혼합형 쌍 분석 (Parallel Processing용)"""
     try:
         groups = [group[num_col].values for name, group in df_subset.groupby(cat_col)]
         groups = [g for g in groups if len(g) >= config_dict["min_sample_size"]]
@@ -395,7 +395,7 @@ def process_mixed_pair(df_subset, num_col, cat_col, config_dict):
 
 
 class AdvancedCombinationsAnalyzer:
-    """통합 고급 조합 분석기 - 모든 분석 기능을 포함한 메인 클래스"""
+    """통합 고급 Combinations analysis기 - 모든 분석 Feature을 Include한 메인 Class"""
 
     def __init__(self, config: AnalysisConfig = None):
         self.config = config or AnalysisConfig()
@@ -413,9 +413,9 @@ class AdvancedCombinationsAnalyzer:
         logger.info(f"  - 고급 통계: {self.config.advanced_stats}")
 
     def _get_dataframe_hash(self, df: pd.DataFrame) -> str:
-        """데이터프레임 해시 생성"""
+        """Data프레임 Hash Create"""
         try:
-            # 데이터의 일부만 샘플링하여 해시 생성 (속도 최적화)
+            # Data의 Some만 샘플링하여 Hash Create (속도 Optimization)
             sample = df.sample(min(100, len(df)), random_state=42)
             info_str = f"{df.shape}_{list(df.columns)}_{sample.values.tobytes()}"
             return hashlib.md5(info_str.encode()).hexdigest()[:16]
@@ -423,7 +423,7 @@ class AdvancedCombinationsAnalyzer:
             return str(hash(str(df.shape)))
 
     def _optimize_dataframe_if_needed(self, df: pd.DataFrame) -> pd.DataFrame:
-        """필요시 데이터프레임 최적화"""
+        """필요시 Data프레임 Optimization"""
         if not self.config.memory_optimization:
             return df
 
@@ -431,7 +431,7 @@ class AdvancedCombinationsAnalyzer:
             return self.memory_optimizer.optimize_dataframe(df)
 
     def _sample_dataframe_if_needed(self, df: pd.DataFrame) -> pd.DataFrame:
-        """큰 데이터셋 샘플링"""
+        """큰 Data셋 샘플링"""
         if len(df) <= self.config.sample_cap:
             return df
 
@@ -443,13 +443,13 @@ class AdvancedCombinationsAnalyzer:
     def analyze_all_combinations(
         self, df: pd.DataFrame, dsl_tokens: List[str] = None
     ) -> Dict[str, Any]:
-        """모든 조합 분석 수행"""
+        """모든 Combinations analysis 수Row"""
         with self.performance_monitor.track_operation("full_analysis"):
-            # 데이터프레임 전처리
+            # Data프레임 전Processing
             df = self._optimize_dataframe_if_needed(df)
             df = self._sample_dataframe_if_needed(df)
 
-            # DSL 토큰이 제공된 경우 해당 컬럼만 분석
+            # DSL token이 제공된 경우 해당 Column만 분석
             if dsl_tokens:
                 available_columns = [
                     col
@@ -474,20 +474,20 @@ class AdvancedCombinationsAnalyzer:
                 "mixed_combinations": self._analyze_mixed_combinations(df),
             }
 
-            # 성능 정보 추가
+            # Performance Information Add
             results["performance"] = self.performance_monitor.get_performance_report()
 
             return results
 
     def _analyze_numerical_combinations(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """수치형 컬럼 간 조합 분석 (Pearson & Spearman)"""
+        """수치형 Column 간 Combinations analysis (Pearson & Spearman)"""
         numerical_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
         if len(numerical_columns) < 2:
             return {"error": "수치형 컬럼이 2개 미만입니다"}
 
         with self.performance_monitor.track_operation("numerical_analysis"):
-            # 캐시 확인
+            # Cache Confirmation
             cache_key = None
             if self.cache:
                 df_hash = self._get_dataframe_hash(df[numerical_columns])
@@ -514,7 +514,7 @@ class AdvancedCombinationsAnalyzer:
                     p_corr = corr_matrix.iloc[i, j]
                     s_corr = spearman_matrix.iloc[i, j]
 
-                    # 둘 중 하나라도 임계값을 넘으면 기록
+                    # 둘 중 하나라도 임계Value을 넘으면 기록
                     max_corr = max(abs(p_corr), abs(s_corr))
 
                     if max_corr >= self.config.correlation_threshold:
@@ -556,12 +556,12 @@ class AdvancedCombinationsAnalyzer:
             return result
 
     def _analyze_categorical_combinations(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """범주형 컬럼 간 조합 분석 (병렬 처리 적용)"""
+        """범주형 Column 간 Combinations analysis (Parallel Processing 적용)"""
         categorical_columns = df.select_dtypes(
             include=["object", "category"]
         ).columns.tolist()
 
-        # 카디널리티 필터링
+        # 카디널리티 Filter링
         categorical_columns = [
             col
             for col in categorical_columns
@@ -572,7 +572,7 @@ class AdvancedCombinationsAnalyzer:
             return {"error": "적절한 범주형 컬럼이 2개 미만입니다"}
 
         with self.performance_monitor.track_operation("categorical_analysis"):
-            # 캐시 확인
+            # Cache Confirmation
             cache_key = None
             if self.cache:
                 df_hash = self._get_dataframe_hash(df[categorical_columns])
@@ -588,7 +588,7 @@ class AdvancedCombinationsAnalyzer:
                 for j in range(i + 1, len(categorical_columns)):
                     pairs.append((categorical_columns[i], categorical_columns[j]))
 
-            # 병렬 처리 실행
+            # Parallel Processing Execution
             if HAS_JOBLIB and self.config.parallel_processing:
                 results = Parallel(n_jobs=self.config.n_jobs)(
                     delayed(process_categorical_pair)(
@@ -602,7 +602,7 @@ class AdvancedCombinationsAnalyzer:
                     for p in pairs
                 ]
 
-            # None 제거 및 정렬
+            # None Remove 및 Sort
             associations = [r for r in results if r is not None]
             associations.sort(key=lambda x: x["cramers_v"], reverse=True)
 
@@ -627,7 +627,7 @@ class AdvancedCombinationsAnalyzer:
             return result
 
     def _analyze_mixed_combinations(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """수치형-범주형 간 조합 분석 (병렬 처리 적용)"""
+        """수치형-범주형 간 Combinations analysis (Parallel Processing 적용)"""
         numerical_columns = df.select_dtypes(include=[np.number]).columns.tolist()
         categorical_columns = df.select_dtypes(
             include=["object", "category"]
@@ -643,7 +643,7 @@ class AdvancedCombinationsAnalyzer:
             return {"error": "수치형 또는 범주형 컬럼이 부족합니다"}
 
         with self.performance_monitor.track_operation("mixed_analysis"):
-            # 캐시 확인
+            # Cache Confirmation
             cache_key = None
             if self.cache:
                 df_hash = self._get_dataframe_hash(
@@ -663,7 +663,7 @@ class AdvancedCombinationsAnalyzer:
                 for cat in categorical_columns:
                     pairs.append((num, cat))
 
-            # 병렬 처리 실행
+            # Parallel Processing Execution
             if HAS_JOBLIB and self.config.parallel_processing:
                 results = Parallel(n_jobs=self.config.n_jobs)(
                     delayed(process_mixed_pair)(
@@ -701,7 +701,7 @@ class AdvancedCombinationsAnalyzer:
             return result
 
     def get_analysis_summary(self, results: Dict[str, Any]) -> str:
-        """분석 결과 요약 생성"""
+        """Analysis results 요약 Create"""
         summary_lines = [
             "=== 고급 조합 분석 결과 요약 ===",
             f"분석 시간: {results['metadata']['analysis_timestamp']}",
@@ -757,7 +757,7 @@ class AdvancedCombinationsAnalyzer:
                 ]
             )
 
-        # 성능 정보
+        # Performance Information
         if "performance" in results:
             perf = results["performance"]
             summary_lines.extend(
@@ -772,7 +772,7 @@ class AdvancedCombinationsAnalyzer:
         return "\n".join(summary_lines)
 
 
-# CLI 기능 통합
+# CLI Feature 통합
 def parse_arguments():
     """명령줄 인수 파싱"""
     parser = argparse.ArgumentParser(description="고급 조합 분석 도구")
@@ -792,7 +792,7 @@ def parse_arguments():
 
 
 def load_config_from_file(config_path: str) -> AnalysisConfig:
-    """설정 파일에서 설정 로드"""
+    """Configuration File에서 Configuration Load"""
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config_data = json.load(f)
@@ -803,7 +803,7 @@ def load_config_from_file(config_path: str) -> AnalysisConfig:
 
 
 def setup_logging(verbose: bool = False):
-    """로깅 설정"""
+    """Logging Configuration"""
     level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
         level=level,
@@ -816,12 +816,12 @@ def setup_logging(verbose: bool = False):
 
 
 def main():
-    """CLI 메인 함수"""
+    """CLI 메인 Function"""
     args = parse_arguments()
     setup_logging(args.verbose)
 
     try:
-        # 설정 로드
+        # Configuration Load
         if args.config:
             config = load_config_from_file(args.config)
         else:
@@ -832,7 +832,7 @@ def main():
                 parallel_processing=not args.no_parallel,
             )
 
-        # 데이터 로드
+        # Load data
         logger.info(f"데이터 파일 로드: {args.file}")
         if args.file.endswith(".csv"):
             df = pd.read_csv(args.file)
@@ -841,20 +841,20 @@ def main():
         else:
             raise ValueError("지원되지 않는 파일 형식 (CSV, XLSX만 지원)")
 
-        # DSL 토큰 파싱
+        # DSL token 파싱
         dsl_tokens = None
         if args.dsl_tokens:
             dsl_tokens = [token.strip() for token in args.dsl_tokens.split(",")]
             logger.info(f"DSL 토큰: {dsl_tokens}")
 
-        # 분석 실행
+        # Run analysis
         analyzer = AdvancedCombinationsAnalyzer(config)
         results = analyzer.analyze_all_combinations(df, dsl_tokens)
 
-        # 결과 출력
+        # Result Output
         print(analyzer.get_analysis_summary(results))
 
-        # 결과 저장
+        # Result Save
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
                 json.dump(results, f, indent=2, ensure_ascii=False, default=str)

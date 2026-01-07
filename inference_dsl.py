@@ -71,7 +71,7 @@ class LSTMEncoderDecoder(nn.Module):
         return torch.cat(outputs, dim=1)
 
 
-# 모델 로드 - support both old and new paths
+# Load model - support both old and new paths
 try:
     model = LSTMEncoderDecoder(VOCAB_SIZE)
     model_path = Path(__file__).parent / "model.pt"
@@ -87,7 +87,7 @@ except Exception as e:
 
 
 def predict_dsl(input_tokens):
-    """DSL 토큰 예측"""
+    """DSL token Yes측"""
     if not input_tokens:
         return input_tokens
 

@@ -12,9 +12,9 @@ token_code_map = {
     "C8": "df.corr()",
     "C9": "df.columns",
     "C10": "df.memory_usage()",
-    "C11": "(df.isnull().sum() / len(df) * 100).round(2)",  # 결측치 비율(%)
+    "C11": "(df.isnull().sum() / len(df) * 100).round(2)",  # 결측치 Ratio(%)
     "C12": "import seaborn as sns; import matplotlib.pyplot as plt; sns.heatmap(df.corr(), annot=True); plt.show()",  # 상관관계 히트맵
-    "C13": "print(df[df.columns[0]].value_counts())",  # 첫 번째 컬럼 값별 개수
+    "C13": "print(df[df.columns[0]].value_counts())",  # 첫 번째 Column Value별 Count
     "C14": "df.describe(include='all')",
     "C15": "df.shape",
     "C16": "df.duplicated().sum()",
@@ -22,41 +22,41 @@ token_code_map = {
     "C18": "{col: df[col].unique() for col in df.columns}",
     "C19": "df.T",
     "C20": "df.index",
-    "C21": "df[df.isnull().any(axis=1)]",  # 결측치가 있는 행
-    "C22": "{col: df[col].mode().tolist() for col in df.columns}",  # 각 컬럼별 최빈값
+    "C21": "df[df.isnull().any(axis=1)]",  # 결측치가 있는 Row
+    "C22": "{col: df[col].mode().tolist() for col in df.columns}",  # 각 Column별 최빈Value
     "C23": "import matplotlib.pyplot as plt; df.select_dtypes(include='number').hist(figsize=(10,8)); plt.show()",  # 수치형 히스토그램
-    "C24": "[df[col].value_counts().head() for col in df.select_dtypes(include='object').columns]",  # 상위 5개 범주형 컬럼 값별 개수
+    "C24": "[df[col].value_counts().head() for col in df.select_dtypes(include='object').columns]",  # 상위 5개 범주형 Column Value별 Count
     "C25": "df.corr().unstack().sort_values(ascending=False)[len(df.columns):len(df.columns)+5]",  # 상관계수 상위 5개
-    "C26": "df.groupby(df.columns[0]).mean()",  # 첫 컬럼 기준 그룹별 평균
-    "C27": "df.to_excel('output.xlsx', index=False)",  # 엑셀 저장
-    "C28": "df.to_json('output.json', orient='records')",  # json 저장
+    "C26": "df.groupby(df.columns[0]).mean()",  # 첫 Column 기준 Group별 Average
+    "C27": "df.to_excel('output.xlsx', index=False)",  # 엑셀 Save
+    "C28": "df.to_json('output.json', orient='records')",  # json Save
     "C29": "df.std()",  # 표준편차
-    "C30": "{col: (df[col].min(), df[col].max()) for col in df.columns}",  # 최대/최소값
-    "C31": "(df==0).all(axis=1).sum()",  # 모든 값이 0인 행 개수
-    "C32": "df.duplicated(keep=False).sum()",  # 모든 값이 중복인 행 개수
-    "C33": "df.count()",  # 결측치가 아닌 값 개수
-    "C34": "df.index.nunique()",  # 고유 인덱스 개수
+    "C30": "{col: (df[col].min(), df[col].max()) for col in df.columns}",  # 최대/Minimum
+    "C31": "(df==0).all(axis=1).sum()",  # 모든 Value이 0인 Row Count
+    "C32": "df.duplicated(keep=False).sum()",  # 모든 Value이 Duplicate인 Row Count
+    "C33": "df.count()",  # 결측치가 아닌 Value Count
+    "C34": "df.index.nunique()",  # Unique 인덱스 Count
     "C35": "import seaborn as sns; import matplotlib.pyplot as plt; sns.pairplot(df.select_dtypes(include='number')); plt.show()",  # pairplot
-    "C36": "df.sort_values(by=df.columns[0], ascending=True)",  # 첫 컬럼 기준 오름차순
-    "C37": "df.sort_values(by=df.columns[0], ascending=False)",  # 첫 컬럼 기준 내림차순
-    "C38": "df.memory_usage(deep=True).sum() / 1024**2",  # 메모리 사용량(MB)
-    "C39": "pd.DataFrame({'col': df.columns, 'dtype': df.dtypes, 'nulls': df.isnull().sum()})",  # 컬럼명, 타입, 결측치
-    "C40": "(df<0).all(axis=1).sum()",  # 모든 값이 음수인 행 개수
-    # 고급 분석 토큰 (C41-C50)
+    "C36": "df.sort_values(by=df.columns[0], ascending=True)",  # 첫 Column 기준 오름차순
+    "C37": "df.sort_values(by=df.columns[0], ascending=False)",  # 첫 Column 기준 내림차순
+    "C38": "df.memory_usage(deep=True).sum() / 1024**2",  # Memory Use량(MB)
+    "C39": "pd.DataFrame({'col': df.columns, 'dtype': df.dtypes, 'nulls': df.isnull().sum()})",  # Column명, Type, 결측치
+    "C40": "(df<0).all(axis=1).sum()",  # 모든 Value이 음수인 Row Count
+    # Advanced analysis Token (C41-C50)
     "C41": "df.skew(numeric_only=True)",  # 왜도 (비대칭도)
     "C42": "df.kurtosis(numeric_only=True)",  # 첨도
     "C43": "df.quantile([0.25, 0.5, 0.75])",  # 사분위수
-    "C44": "df.select_dtypes(include='number').apply(lambda x: x.value_counts().head())",  # 수치형 컬럼 최빈값
-    "C45": "{col: df[col].nunique()/len(df)*100 for col in df.columns}",  # 컬럼별 고유값 비율(%)
-    "C46": "df.apply(lambda x: sum(x.duplicated()))",  # 컬럼별 중복값 개수
+    "C44": "df.select_dtypes(include='number').apply(lambda x: x.value_counts().head())",  # 수치형 Column 최빈Value
+    "C45": "{col: df[col].nunique()/len(df)*100 for col in df.columns}",  # Column별 UniqueValue Ratio(%)
+    "C46": "df.apply(lambda x: sum(x.duplicated()))",  # Column별 DuplicateValue Count
     "C47": "import matplotlib.pyplot as plt; df.boxplot(figsize=(12,6)); plt.xticks(rotation=45); plt.show()",  # 박스플롯
-    "C48": "df.columns[df.isnull().any()].tolist()",  # 결측치가 있는 컬럼 목록
+    "C48": "df.columns[df.isnull().any()].tolist()",  # 결측치가 있는 Column 목록
     "C49": "pd.crosstab(df.iloc[:,0], df.iloc[:,1]) if len(df.columns) >= 2 else 'Need at least 2 columns'",  # 교차표
-    "C50": "from src.core.combinations import AdvancedCombinationsAnalyzer; AdvancedCombinationsAnalyzer().analyze_all_combinations(df)",  # 조합 분석
-    # 특수 기능 토큰
-    "SAVE": "save_results",  # 결과 저장 트리거
-    "EXPORT": "df.to_csv('analyzed_data.csv', index=False)",  # CSV 내보내기
-    "PROFILE": "df.profile_report() if 'profile_report' in dir(df) else print('pandas_profiling not available')",  # 프로파일링
+    "C50": "from src.core.combinations import AdvancedCombinationsAnalyzer; AdvancedCombinationsAnalyzer().analyze_all_combinations(df)",  # Combinations analysis
+    # 특수 Feature Token
+    "SAVE": "save_results",  # Result Save 트리거
+    "EXPORT": "df.to_csv('analyzed_data.csv', index=False)",  # CSV Export
+    "PROFILE": "df.profile_report() if 'profile_report' in dir(df) else print('pandas_profiling not available')",  # Profile링
 }
 
 
@@ -71,13 +71,13 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
         Path to the CSV file that should be read in the generated code.
         Defaults to "your_file.csv" for backward compatibility.
     """
-    # 헤더 생성
+    # Header Create
     lines = [
         "#!/usr/bin/env python3",
         '"""',
-        f"자동 생성된 데이터 분석 코드",
+        f"Automatic Create된 Data 분석 코드",
         f'DSL 시퀀스: {" → ".join(dsl_sequence)}',
-        f"생성 시간: {_get_timestamp()}",
+        f"Create 시간: {_get_timestamp()}",
         '"""',
         "",
         "import pandas as pd",
@@ -85,10 +85,10 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
         "",
     ]
 
-    # 파일 로딩 및 기본 확인
+    # File 로딩 및 Default Confirmation
     lines.extend(
         [
-            "# 데이터 로딩",
+            "# Data 로딩",
             f"print(' 데이터 로딩: {csv_path}')",
             f"df = pd.read_csv({repr(csv_path)})",
             f"print(f' 데이터 로드 완료: {{len(df):,}}행 × {{len(df.columns)}}열')",
@@ -96,7 +96,7 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
         ]
     )
 
-    # 각 토큰에 대한 코드 생성
+    # 각 Token에 for Code generation
     for i, token in enumerate(dsl_sequence, 1):
         code_line = token_code_map.get(token)
         if code_line:
@@ -113,7 +113,7 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
                 ]
             )
 
-    # 푸터 추가
+    # 푸터 Add
     lines.extend(
         [
             "print('\\n 모든 분석이 완료되었습니다!')",
@@ -125,14 +125,14 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
 
 
 def _get_timestamp():
-    """현재 시간 반환"""
+    """현재 시간 Return"""
     from datetime import datetime
 
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _get_token_description(token):
-    """토큰 설명 반환"""
+    """Token 설명 Return"""
     descriptions = {
         "C1": "기술통계 요약",
         "C2": "데이터 정보",
@@ -192,7 +192,7 @@ def _get_token_description(token):
 
 
 def generate_analysis_template(analysis_type="basic"):
-    """분석 템플릿 생성"""
+    """분석 템플릿 Create"""
     templates = {
         "basic": ["C2", "C15", "C6", "C3", "C1"],
         "statistical": ["C1", "C14", "C29", "C41", "C42", "C43"],
@@ -204,7 +204,7 @@ def generate_analysis_template(analysis_type="basic"):
     return templates.get(analysis_type, templates["basic"])
 
 
-# 사용 예시:
+# Use Example:
 # basic_analysis = generate_analysis_template("basic")
 # code = dsl_to_code(basic_analysis, "data.csv")
 # print(code)

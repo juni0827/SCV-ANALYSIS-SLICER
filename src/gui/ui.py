@@ -9,7 +9,7 @@ from src.core.analysis import column_profile
 from src.gui.visualization import (
     plot_quick_distribution,
     plot_generic,
-    # 병합본 visualization.py의 추가 플롯들
+    # 병합본 visualization.py의 Add 플롯들
     plot_heatmap_crosstab,
     plot_scatter_corr,
     plot_box_group,
@@ -44,7 +44,7 @@ TAG_COMB_SCROLL = "comb_scroll"
 TAG_RECO_GROUP = "reco_group"
 TAG_FILE_DROP = "file_drop_handler"
 
-LAST_REPORT = None  # 마지막 조합/분석 결과 저장
+LAST_REPORT = None  # 마지막 조합/Analysis results Save
 
 
 def _safe_set_value(tag: str, value: str):
@@ -355,7 +355,7 @@ def on_file_selected(state: AppState, app_data):
         # Update advanced plot column dropdowns
         dpg.configure_item("adv_column1", items=cols)
         dpg.configure_item("adv_column2", items=["No columns loaded"] + cols)
-        # 기본 파일명
+        # Default File명
         stem = Path(file_path).stem
         if dpg.does_item_exist("export_filename"):
             dpg.set_value("export_filename", f"{stem}_analysis")
