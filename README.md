@@ -50,8 +50,10 @@ pip install -r requirements.txt
 Launch the modern Tkinter-based interface with theme switching:
 
 ```bash
-python app.py
+python -m src.gui.app
 ```
+
+> **Note**: The canonical implementation is in the `src/` directory. Legacy root-level GUI files have been removed.
 
 Features:
 
@@ -229,8 +231,10 @@ pip install -r requirements.txt
 테마 전환 기능이 있는 현대적인 Tkinter 기반 인터페이스 실행:
 
 ```bash
-python app.py
+python -m src.gui.app
 ```
+
+> **참고**: 정식 구현은 `src/` 디렉토리에 있습니다. 레거시 루트 레벨 GUI 파일이 제거되었습니다.
 
 기능:
 
