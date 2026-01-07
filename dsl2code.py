@@ -485,7 +485,9 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
         lines.append("except Exception as e:")
         lines.append(f"    print(f'오류 발생 ({token}): {{e}}')")
 
-    lines.extend(["", "# --- 분석 Complete ---", "print('\\n모든 분석이 Complete되었습니다.')"])
+    lines.extend(
+        ["", "# --- 분석 Complete ---", "print('\\n모든 분석이 Complete되었습니다.')"]
+    )
 
     return "\n".join(lines)
 
