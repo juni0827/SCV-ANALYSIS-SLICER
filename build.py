@@ -18,6 +18,7 @@ import time
 from pathlib import Path
 from typing import List, Dict, Any
 
+
 class BuildConfig:
     """빌드 설정 클래스"""
 
@@ -46,43 +47,55 @@ class BuildConfig:
     def _get_exclude_modules(self) -> List[str]:
         """제외 모듈 목록"""
         return [
-            'dearpygui',  # 사용하지 않는 GUI 라이브러리
-            'PyQt5', 'PyQt6', 'PySide2', 'PySide6',  # Qt 라이브러리
-            'wx',  # wxPython
-            'tkinter',  # 표준 tkinter (dearpygui 사용)
-            'test', 'unittest', 'pytest',  # 테스트 모듈들
-            'IPython', 'jupyter', 'notebook',  # Jupyter 관련
+            "dearpygui",  # 사용하지 않는 GUI 라이브러리
+            "PyQt5",
+            "PyQt6",
+            "PySide2",
+            "PySide6",  # Qt 라이브러리
+            "wx",  # wxPython
+            "tkinter",  # 표준 tkinter (dearpygui 사용)
+            "test",
+            "unittest",
+            "pytest",  # 테스트 모듈들
+            "IPython",
+            "jupyter",
+            "notebook",  # Jupyter 관련
         ]
 
     def get_pyinstaller_args(self) -> List[str]:
         """PyInstaller 명령어 인자 생성"""
         args = [
-            sys.executable, '-m', 'PyInstaller',
-            '--name', self.name,
-            '--optimize', str(self.optimize),
+            sys.executable,
+            "-m",
+            "PyInstaller",
+            "--name",
+            self.name,
+            "--optimize",
+            str(self.optimize),
         ]
 
         if self.onefile:
-            args.append('--onefile')
+            args.append("--onefile")
 
         if not self.console:
-            args.append('--windowed')
+            args.append("--windowed")
 
         # 제외 모듈들 추가
         for module in self.exclude_modules:
-            args.extend(['--exclude-module', module])
+            args.extend(["--exclude-module", module])
 
         # 추가 데이터 파일들
         for src, dst in self.datas:
             if os.path.exists(src):
                 # 플랫폼별 경로 구분자
                 separator = ":" if not self.is_windows else ";"
-                args.extend(['--add-data', f'{src}{separator}{dst}'])
+                args.extend(["--add-data", f"{src}{separator}{dst}"])
 
         # 메인 스크립트
         args.append(self.main_script)
 
         return args
+
 
 class BuildTool:
     """빌드 도구 클래스"""
@@ -94,8 +107,8 @@ class BuildTool:
         """이전 빌드 파일들 정리"""
         print("Cleaning up previous build files...")
 
-        dirs_to_remove = ['build', 'dist', '__pycache__']
-        files_to_remove = ['*.spec']
+        dirs_to_remove = ["build", "dist", "__pycache__"]
+        files_to_remove = ["*.spec"]
 
         success = True
 
@@ -109,6 +122,7 @@ class BuildTool:
                     success = False
 
         import glob
+
         for pattern in files_to_remove:
             for file_path in glob.glob(pattern):
                 try:
@@ -126,15 +140,22 @@ class BuildTool:
 
         # PyInstaller 설치 여부 확인 (import 대신 명령어 실행)
         try:
-            result = subprocess.run([sys.executable, "-m", "pyinstaller", "--version"], 
-                                    capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                [sys.executable, "-m", "pyinstaller", "--version"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
             version = result.stdout.strip().split()[-1]  # 버전 추출
             print(f"   PyInstaller {version} found")
         except (subprocess.CalledProcessError, FileNotFoundError):
             print("   PyInstaller is not installed.")
             if self._ask_install("PyInstaller"):
                 try:
-                    subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=True)
+                    subprocess.run(
+                        [sys.executable, "-m", "pip", "install", "pyinstaller"],
+                        check=True,
+                    )
                     print("   PyInstaller installed successfully")
                 except subprocess.CalledProcessError:
                     print("   Failed to install PyInstaller")
@@ -173,8 +194,10 @@ class BuildTool:
 
     def check_result(self) -> bool:
         """빌드 결과 확인"""
-        exe_name = f"{self.config.name}.exe" if self.config.is_windows else self.config.name
-        exe_path = Path('dist') / exe_name
+        exe_name = (
+            f"{self.config.name}.exe" if self.config.is_windows else self.config.name
+        )
+        exe_path = Path("dist") / exe_name
 
         if exe_path.exists():
             size_mb = exe_path.stat().st_size / (1024 * 1024)
@@ -195,12 +218,14 @@ class BuildTool:
         """패키지 설치 여부 확인"""
         try:
             # CI/CD 환경에서는 자동으로 설치
-            if os.environ.get('CI') or not sys.stdin.isatty():
+            if os.environ.get("CI") or not sys.stdin.isatty():
                 print(f"Installing {package} automatically...")
                 return True
 
-            response = input(f"Do you want to install {package}? (y/n): ").strip().lower()
-            return response in ['y', 'yes', '']
+            response = (
+                input(f"Do you want to install {package}? (y/n): ").strip().lower()
+            )
+            return response in ["y", "yes", ""]
         except:
             return True  # 기본적으로 설치 시도
 
@@ -208,11 +233,15 @@ class BuildTool:
         """실행 파일 실행 여부 확인"""
         try:
             # CI/CD 환경에서는 실행하지 않음
-            if os.environ.get('CI') or not sys.stdin.isatty():
+            if os.environ.get("CI") or not sys.stdin.isatty():
                 return False
 
-            response = input("\nDo you want to test the built executable now? (y/n): ").strip().lower()
-            return response in ['y', 'yes', '']
+            response = (
+                input("\nDo you want to test the built executable now? (y/n): ")
+                .strip()
+                .lower()
+            )
+            return response in ["y", "yes", ""]
         except:
             return False
 
@@ -222,10 +251,13 @@ class BuildTool:
             if self.config.is_windows:
                 os.startfile(str(exe_path))
             else:
-                subprocess.run(['xdg-open' if self.config.is_linux else 'open', str(exe_path)])
+                subprocess.run(
+                    ["xdg-open" if self.config.is_linux else "open", str(exe_path)]
+                )
             print("   Executable launched")
         except Exception as e:
             print(f"   Failed to launch executable: {e}")
+
 
 def main():
     """메인 함수"""
@@ -236,10 +268,10 @@ def main():
     # 명령줄 인자 처리
     if len(sys.argv) > 1:
         arg = sys.argv[1].lower()
-        if arg in ['-h', '--help', 'help']:
+        if arg in ["-h", "--help", "help"]:
             print(__doc__)
             return True
-        elif arg in ['--clean', 'clean']:
+        elif arg in ["--clean", "clean"]:
             config = BuildConfig()
             builder = BuildTool(config)
             success = builder.cleanup()
@@ -291,6 +323,7 @@ def main():
     except Exception as e:
         print(f"Unexpected error: {e}")
         return False
+
 
 if __name__ == "__main__":
     success = main()

@@ -1,28 +1,29 @@
-
 # dsl2code.py
 # Convert DSL token sequence to executable Python code with dynamic generation
 
 import textwrap
 from datetime import datetime
 
+
 class DSLHandler:
     """DSL 토큰을 처리하고 동적으로 코드를 생성하는 핸들러"""
-    
+
     @staticmethod
     def _get_basic_stats(df_name="df"):
         return f"{df_name}.describe()"
-    
+
     @staticmethod
     def _get_info(df_name="df"):
         return f"{df_name}.info()"
-    
+
     @staticmethod
     def _get_missing_values(df_name="df"):
         return f"{df_name}.isnull().sum()"
-        
+
     @staticmethod
     def _get_correlation_heatmap(df_name="df"):
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             import seaborn as sns
             import matplotlib.pyplot as plt
             
@@ -30,11 +31,13 @@ class DSLHandler:
             sns.heatmap({df_name}.corr(numeric_only=True), annot=True, cmap='coolwarm', fmt='.2f')
             plt.title('Correlation Heatmap')
             plt.show()
-        """).strip()
+        """
+        ).strip()
 
     @staticmethod
     def _get_distribution_plot(df_name="df", col_idx=0):
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             import seaborn as sns
             import matplotlib.pyplot as plt
             
@@ -46,22 +49,26 @@ class DSLHandler:
                 plt.show()
             else:
                 print(f'{{target_col}} is not numeric, skipping histogram.')
-        """).strip()
+        """
+        ).strip()
 
     @staticmethod
     def _get_advanced_combinations(df_name="df"):
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             from src.core.combinations import AdvancedCombinationsAnalyzer
             analyzer = AdvancedCombinationsAnalyzer()
             analyzer.analyze_all_combinations({df_name})
-        """).strip()
+        """
+        ).strip()
 
     # --- 확장된 고급 분석 기능 (C51 ~ C70) ---
-    
+
     @staticmethod
     def _get_time_series_analysis(df_name="df"):
         """C51: 시계열 분석 (날짜 컬럼 자동 감지)"""
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             # 날짜 컬럼 자동 감지 및 시계열 분석
             date_cols = {df_name}.select_dtypes(include=['datetime64']).columns
             if len(date_cols) == 0:
@@ -82,12 +89,14 @@ class DSLHandler:
                 plt.show()
             else:
                 print("No datetime columns found for time series analysis")
-        """).strip()
+        """
+        ).strip()
 
     @staticmethod
     def _get_outlier_detection(df_name="df"):
         """C52: IQR 기반 이상치 탐지"""
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             # IQR 방식으로 이상치 탐지
             numeric_cols = {df_name}.select_dtypes(include='number').columns
             for col in numeric_cols:
@@ -97,12 +106,14 @@ class DSLHandler:
                 outliers = {df_name}[({df_name}[col] < (Q1 - 1.5 * IQR)) | ({df_name}[col] > (Q3 + 1.5 * IQR))]
                 if len(outliers) > 0:
                     print(f"Column {{col}}: {{len(outliers)}} outliers detected")
-        """).strip()
+        """
+        ).strip()
 
     @staticmethod
     def _get_pca_analysis(df_name="df"):
         """C53: PCA 차원 축소 및 시각화"""
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             from sklearn.decomposition import PCA
             from sklearn.preprocessing import StandardScaler
             
@@ -123,12 +134,14 @@ class DSLHandler:
                 plt.show()
             else:
                 print("Not enough numeric columns for PCA")
-        """).strip()
+        """
+        ).strip()
 
     @staticmethod
     def _get_text_analysis(df_name="df"):
         """C54: 텍스트 컬럼 워드클라우드"""
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             from wordcloud import WordCloud
             import matplotlib.pyplot as plt
             
@@ -144,12 +157,14 @@ class DSLHandler:
                 plt.show()
             else:
                 print("No text columns found for Word Cloud")
-        """).strip()
+        """
+        ).strip()
 
     @staticmethod
     def _get_cluster_analysis(df_name="df"):
         """C55: K-Means 클러스터링"""
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             from sklearn.cluster import KMeans
             from sklearn.preprocessing import StandardScaler
             
@@ -173,12 +188,14 @@ class DSLHandler:
                     plt.show()
             else:
                 print("Not enough numeric data for clustering")
-        """).strip()
+        """
+        ).strip()
 
     @staticmethod
     def _get_smart_visualization(df_name="df"):
         """C60: 데이터 타입에 따른 스마트 시각화 추천"""
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             # 스마트 시각화: 데이터 타입 자동 감지 및 최적 그래프 생성
             num_cols = {df_name}.select_dtypes(include='number').columns
             cat_cols = {df_name}.select_dtypes(include='object').columns
@@ -222,12 +239,14 @@ class DSLHandler:
                 sns.heatmap(ct, annot=True, fmt='d', cmap='YlGnBu')
                 plt.title(f'Heatmap: {{c1}} vs {{c2}}')
                 plt.show()
-        """).strip()
+        """
+        ).strip()
 
     @staticmethod
     def _get_pie_chart(df_name="df"):
         """C61: 범주형 데이터 원형 차트"""
-        return textwrap.dedent(f"""
+        return textwrap.dedent(
+            f"""
             # 원형 차트 (Pie Chart)
             cat_cols = {df_name}.select_dtypes(include='object').columns
             if len(cat_cols) > 0:
@@ -246,7 +265,9 @@ class DSLHandler:
                 plt.show()
             else:
                 print("No categorical columns found for Pie Chart")
-        """).strip()
+        """
+        ).strip()
+
 
 # 토큰 정의 및 핸들러 매핑
 TOKEN_HANDLERS = {
@@ -261,7 +282,6 @@ TOKEN_HANDLERS = {
     "C8": lambda: "df.corr(numeric_only=True)",
     "C9": lambda: "df.columns.tolist()",
     "C10": lambda: "df.memory_usage(deep=True)",
-    
     # 중급 분석
     "C11": lambda: "(df.isnull().sum() / len(df) * 100).round(2)",
     "C12": DSLHandler._get_correlation_heatmap,
@@ -270,10 +290,9 @@ TOKEN_HANDLERS = {
     "C15": lambda: "print(f'Shape: {df.shape}')",
     "C16": lambda: "df.duplicated().sum()",
     "C17": lambda: "df.sample(min(10, len(df)))",
-    "C18": lambda: "{col: df[col].unique()[:10] for col in df.columns}", # 너무 길어질 수 있어 10개로 제한
+    "C18": lambda: "{col: df[col].unique()[:10] for col in df.columns}",  # 너무 길어질 수 있어 10개로 제한
     "C19": lambda: "df.head().T",
     "C20": lambda: "df.index",
-    
     # 데이터 조작 및 필터링
     "C21": lambda: "df[df.isnull().any(axis=1)].head()",
     "C22": lambda: "df.mode().iloc[0]",
@@ -285,7 +304,6 @@ TOKEN_HANDLERS = {
     "C28": lambda: "df.to_json('output.json', orient='records')",
     "C29": lambda: "df.std(numeric_only=True)",
     "C30": lambda: "df.agg(['min', 'max'])",
-    
     # 고급 통계 및 시각화
     "C31": lambda: "(df == 0).sum()",
     "C32": lambda: "df[df.duplicated()]",
@@ -297,7 +315,6 @@ TOKEN_HANDLERS = {
     "C38": lambda: "f'{df.memory_usage(deep=True).sum() / 1024**2:.2f} MB'",
     "C39": lambda: "pd.concat([df.dtypes, df.isnull().sum()], axis=1, keys=['Type', 'Nulls'])",
     "C40": lambda: "(df.select_dtypes(include='number') < 0).sum()",
-    
     # 심화 분석 (C41-C50)
     "C41": lambda: "df.skew(numeric_only=True)",
     "C42": lambda: "df.kurtosis(numeric_only=True)",
@@ -309,62 +326,103 @@ TOKEN_HANDLERS = {
     "C48": lambda: "df.columns[df.isnull().any()].tolist()",
     "C49": lambda: "pd.crosstab(df.iloc[:, 0], df.iloc[:, 1]) if len(df.columns) > 1 else 'Not enough columns'",
     "C50": DSLHandler._get_advanced_combinations,
-    
     # --- 확장된 기능 (C51-C70) ---
     "C51": DSLHandler._get_time_series_analysis,
     "C52": DSLHandler._get_outlier_detection,
     "C53": DSLHandler._get_pca_analysis,
     "C54": DSLHandler._get_text_analysis,
     "C55": DSLHandler._get_cluster_analysis,
-    "C56": lambda: "df.corr(method='spearman', numeric_only=True)", # 스피어만 상관계수
-    "C57": lambda: "df.corr(method='kendall', numeric_only=True)", # 켄달 상관계수
-    "C58": lambda: "df.select_dtypes(include='number').var()", # 분산
-    "C59": lambda: "df.select_dtypes(include='number').sem()", # 표준오차
-    "C60": DSLHandler._get_smart_visualization, # 스마트 시각화 추천
-    "C61": DSLHandler._get_pie_chart, # 원형 차트
-    
+    "C56": lambda: "df.corr(method='spearman', numeric_only=True)",  # 스피어만 상관계수
+    "C57": lambda: "df.corr(method='kendall', numeric_only=True)",  # 켄달 상관계수
+    "C58": lambda: "df.select_dtypes(include='number').var()",  # 분산
+    "C59": lambda: "df.select_dtypes(include='number').sem()",  # 표준오차
+    "C60": DSLHandler._get_smart_visualization,  # 스마트 시각화 추천
+    "C61": DSLHandler._get_pie_chart,  # 원형 차트
     "SAVE": lambda: "# 결과 저장 로직 (실행 환경에 따라 다름)",
     "EXPORT": lambda: "df.to_csv('analysis_result.csv', index=False)",
-    "PROFILE": lambda: "import ydata_profiling; ydata_profiling.ProfileReport(df).to_file('report.html')"
+    "PROFILE": lambda: "import ydata_profiling; ydata_profiling.ProfileReport(df).to_file('report.html')",
 }
+
 
 def _get_token_description(token):
     """토큰 설명 반환 (확장됨)"""
     descriptions = {
-        "C1": "기술통계 요약", "C2": "데이터 정보", "C3": "결측치 개수", "C4": "데이터 타입",
-        "C5": "고유값 개수", "C6": "상위 5행", "C7": "하위 5행", "C8": "상관관계 행렬",
-        "C9": "컬럼 목록", "C10": "메모리 사용량", "C11": "결측치 비율", "C12": "상관관계 히트맵",
-        "C13": "첫 컬럼 값 분포", "C14": "상세 기술통계", "C15": "데이터 크기(Shape)",
-        "C16": "중복행 개수", "C17": "랜덤 샘플링", "C18": "컬럼별 고유값 예시",
-        "C19": "데이터 전치(Transpose)", "C20": "인덱스 정보", "C21": "결측치 포함 행 조회",
-        "C22": "최빈값(Mode)", "C23": "히스토그램 시각화", "C24": "범주형 변수 요약",
-        "C25": "주요 상관관계 쌍", "C26": "그룹별 평균", "C27": "엑셀 저장", "C28": "JSON 저장",
-        "C29": "표준편차", "C30": "최대/최소값", "C31": "0인 값 개수", "C32": "중복 데이터 조회",
-        "C33": "유효 데이터 개수", "C34": "고유 인덱스 여부", "C35": "Pairplot 시각화",
-        "C36": "오름차순 정렬", "C37": "내림차순 정렬", "C38": "메모리 사용량(MB)",
-        "C39": "데이터 품질 요약", "C40": "음수값 개수", "C41": "왜도(Skewness)",
-        "C42": "첨도(Kurtosis)", "C43": "4분위수", "C44": "수치형 최빈값",
-        "C45": "고유값 비율", "C46": "컬럼별 중복도", "C47": "박스플롯", "C48": "결측 컬럼 목록",
-        "C49": "교차표(Crosstab)", "C50": "고급 조합 분석",
-        
+        "C1": "기술통계 요약",
+        "C2": "데이터 정보",
+        "C3": "결측치 개수",
+        "C4": "데이터 타입",
+        "C5": "고유값 개수",
+        "C6": "상위 5행",
+        "C7": "하위 5행",
+        "C8": "상관관계 행렬",
+        "C9": "컬럼 목록",
+        "C10": "메모리 사용량",
+        "C11": "결측치 비율",
+        "C12": "상관관계 히트맵",
+        "C13": "첫 컬럼 값 분포",
+        "C14": "상세 기술통계",
+        "C15": "데이터 크기(Shape)",
+        "C16": "중복행 개수",
+        "C17": "랜덤 샘플링",
+        "C18": "컬럼별 고유값 예시",
+        "C19": "데이터 전치(Transpose)",
+        "C20": "인덱스 정보",
+        "C21": "결측치 포함 행 조회",
+        "C22": "최빈값(Mode)",
+        "C23": "히스토그램 시각화",
+        "C24": "범주형 변수 요약",
+        "C25": "주요 상관관계 쌍",
+        "C26": "그룹별 평균",
+        "C27": "엑셀 저장",
+        "C28": "JSON 저장",
+        "C29": "표준편차",
+        "C30": "최대/최소값",
+        "C31": "0인 값 개수",
+        "C32": "중복 데이터 조회",
+        "C33": "유효 데이터 개수",
+        "C34": "고유 인덱스 여부",
+        "C35": "Pairplot 시각화",
+        "C36": "오름차순 정렬",
+        "C37": "내림차순 정렬",
+        "C38": "메모리 사용량(MB)",
+        "C39": "데이터 품질 요약",
+        "C40": "음수값 개수",
+        "C41": "왜도(Skewness)",
+        "C42": "첨도(Kurtosis)",
+        "C43": "4분위수",
+        "C44": "수치형 최빈값",
+        "C45": "고유값 비율",
+        "C46": "컬럼별 중복도",
+        "C47": "박스플롯",
+        "C48": "결측 컬럼 목록",
+        "C49": "교차표(Crosstab)",
+        "C50": "고급 조합 분석",
         # 확장된 설명
-        "C51": "시계열 트렌드 분석", "C52": "이상치(Outlier) 탐지", "C53": "PCA 차원 축소",
-        "C54": "워드클라우드(텍스트)", "C55": "K-Means 클러스터링", "C56": "스피어만 상관계수",
-        "C57": "켄달 상관계수", "C58": "분산(Variance)", "C59": "표준오차(SEM)",
-        "C60": "스마트 시각화 추천", "C61": "원형 차트(Pie Chart)"
+        "C51": "시계열 트렌드 분석",
+        "C52": "이상치(Outlier) 탐지",
+        "C53": "PCA 차원 축소",
+        "C54": "워드클라우드(텍스트)",
+        "C55": "K-Means 클러스터링",
+        "C56": "스피어만 상관계수",
+        "C57": "켄달 상관계수",
+        "C58": "분산(Variance)",
+        "C59": "표준오차(SEM)",
+        "C60": "스마트 시각화 추천",
+        "C61": "원형 차트(Pie Chart)",
     }
     return descriptions.get(token, f"분석 작업 ({token})")
+
 
 def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
     """
     DSL 토큰 시퀀스를 실행 가능한 Python 코드로 변환합니다.
     Jinja2 없이도 동적인 코드 생성을 지원합니다.
-    """    
+    """
     # 헤더 생성
     lines = [
         "#!/usr/bin/env python3",
         '"""',
-        f'자동 생성된 고급 데이터 분석 코드',
+        f"자동 생성된 고급 데이터 분석 코드",
         f'DSL 시퀀스: {" → ".join(dsl_sequence)}',
         f'생성 시간: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
         '"""',
@@ -375,58 +433,62 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
         "import seaborn as sns",
         "import warnings",
         "warnings.filterwarnings('ignore')",
-        ""
+        "",
     ]
-    
+
     # 데이터 로딩
-    lines.extend([
-        "# --- 데이터 로딩 ---",
-        f"print('데이터 로딩 중: {csv_path}')",
-        "try:",
-        f"    df = pd.read_csv({repr(csv_path)})",
-        "    print(f'데이터 로드 완료: {len(df):,}행 × {len(df.columns)}열')",
-        "except Exception as e:",
-        "    print(f'데이터 로드 실패: {e}')",
-        "    exit(1)",
-        ""
-    ])
-    
+    lines.extend(
+        [
+            "# --- 데이터 로딩 ---",
+            f"print('데이터 로딩 중: {csv_path}')",
+            "try:",
+            f"    df = pd.read_csv({repr(csv_path)})",
+            "    print(f'데이터 로드 완료: {len(df):,}행 × {len(df.columns)}열')",
+            "except Exception as e:",
+            "    print(f'데이터 로드 실패: {e}')",
+            "    exit(1)",
+            "",
+        ]
+    )
+
     # 분석 실행 루프
     lines.append("# --- 분석 시작 ---")
-    
+
     for i, token in enumerate(dsl_sequence, 1):
         handler = TOKEN_HANDLERS.get(token)
         description = _get_token_description(token)
-        
+
         lines.append(f"\n# [{i}] {token}: {description}")
         lines.append(f"print('\\n🔹 {i}. {description} ({token})')")
         lines.append("try:")
-        
+
         if handler:
             # 핸들러가 함수면 호출하여 코드 문자열을 얻고, 문자열이면 그대로 사용
             code_block = handler() if callable(handler) else handler
-            
+
             # 코드 블록 들여쓰기 적용
             indented_code = textwrap.indent(code_block, "    ")
-            
+
             # 결과 출력 로직이 포함되어 있지 않으면 print로 감싸기 (단순 표현식인 경우)
-            if "print" not in code_block and "plt.show" not in code_block and "=" not in code_block and len(code_block.split('\n')) == 1:
+            if (
+                "print" not in code_block
+                and "plt.show" not in code_block
+                and "=" not in code_block
+                and len(code_block.split("\n")) == 1
+            ):
                 lines.append(f"    print({code_block})")
             else:
                 lines.append(indented_code)
         else:
             lines.append(f"    print('알 수 없는 토큰: {token}')")
-            
+
         lines.append("except Exception as e:")
         lines.append(f"    print(f'오류 발생 ({token}): {{e}}')")
-        
-    lines.extend([
-        "",
-        "# --- 분석 완료 ---",
-        "print('\\n모든 분석이 완료되었습니다.')"
-    ])
-    
+
+    lines.extend(["", "# --- 분석 완료 ---", "print('\\n모든 분석이 완료되었습니다.')"])
+
     return "\n".join(lines)
+
 
 def generate_analysis_template(analysis_type="basic"):
     """분석 템플릿 생성"""
@@ -437,8 +499,7 @@ def generate_analysis_template(analysis_type="basic"):
         "missing_data": ["C3", "C11", "C21", "C48"],
         "correlation": ["C8", "C12", "C25", "C50"],
         "comprehensive": ["C2", "C15", "C3", "C1", "C8", "C12", "C23", "C50"],
-        "advanced_ml": ["C51", "C52", "C53", "C55"], # 새로 추가된 ML 템플릿
-        "text_mining": ["C54"] # 텍스트 분석 템플릿
+        "advanced_ml": ["C51", "C52", "C53", "C55"],  # 새로 추가된 ML 템플릿
+        "text_mining": ["C54"],  # 텍스트 분석 템플릿
     }
     return templates.get(analysis_type, templates["basic"])
-

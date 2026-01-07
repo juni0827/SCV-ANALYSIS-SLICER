@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import json
@@ -23,6 +22,7 @@ SPECIAL_TOKENS_COUNT = 3
 max_id = max(token_to_id.values()) if token_to_id else 0
 VOCAB_SIZE = max_id + 1 + SPECIAL_TOKENS_COUNT
 
+
 class LSTMEncoderDecoder(nn.Module):
     def __init__(self, vocab_size, embed_dim=64, hidden_dim=128):
         super().__init__()
@@ -34,7 +34,9 @@ class LSTMEncoderDecoder(nn.Module):
     def forward(self, x):
         emb = self.embed(x)
         _, (h, c) = self.encoder(emb)
-        dec_input = torch.full((x.size(0), 1), SOS_IDX, dtype=torch.long, device=x.device)
+        dec_input = torch.full(
+            (x.size(0), 1), SOS_IDX, dtype=torch.long, device=x.device
+        )
         outputs = []
 
         for _ in range(x.size(1)):
@@ -51,7 +53,9 @@ class LSTMEncoderDecoder(nn.Module):
         with torch.no_grad():
             emb = self.embed(x)
             _, (h, c) = self.encoder(emb)
-            dec_input = torch.full((x.size(0), 1), SOS_IDX, dtype=torch.long, device=x.device)
+            dec_input = torch.full(
+                (x.size(0), 1), SOS_IDX, dtype=torch.long, device=x.device
+            )
             outputs = []
 
             for _ in range(max_len):
@@ -65,6 +69,7 @@ class LSTMEncoderDecoder(nn.Module):
                     break
 
         return torch.cat(outputs, dim=1)
+
 
 # 모델 로드 - support both old and new paths
 try:
@@ -80,14 +85,15 @@ except Exception as e:
     print("기본 시퀀스를 사용합니다.")
     MODEL_AVAILABLE = False
 
+
 def predict_dsl(input_tokens):
     """DSL 토큰 예측"""
     if not input_tokens:
         return input_tokens
-    
+
     if not MODEL_AVAILABLE:
         return input_tokens
-    
+
     try:
         # Convert tokens to IDs
         input_ids = []
@@ -95,22 +101,22 @@ def predict_dsl(input_tokens):
             if token in token_to_id:
                 # Shift by SPECIAL_TOKENS_COUNT
                 input_ids.append(token_to_id[token] + SPECIAL_TOKENS_COUNT)
-        
+
         if not input_ids:
             return input_tokens
 
         input_tensor = torch.tensor([input_ids])
         output_ids = model.generate(input_tensor)[0]
-        
+
         # Convert IDs back to tokens
         predicted_tokens = []
         for i in output_ids:
             idx = i.item() - SPECIAL_TOKENS_COUNT
             if idx in id_to_token:
                 predicted_tokens.append(id_to_token[idx])
-        
+
         return predicted_tokens if predicted_tokens else input_tokens
-        
+
     except Exception as e:
         print(f"  예측 중 오류 발생: {e}")
         return input_tokens

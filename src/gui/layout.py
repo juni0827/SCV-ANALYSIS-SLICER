@@ -8,6 +8,7 @@ TAG_LEFT = "left_panel"
 TAG_RIGHT = "right_panel"
 TAG_SPLITTER = "splitter_table"  # legacy (unused with group splitter)
 
+
 def auto_ratio(state: AppState):
     """자동 비율 산정: 컬럼 수가 많을수록 오른쪽(표/그래프) 더 넓게, 좌측은 22–34% 범위."""
     try:
@@ -18,6 +19,7 @@ def auto_ratio(state: AppState):
         state.split_ratio = max(0.22, min(0.34, left_ratio))
     except Exception:
         state.split_ratio = 0.26
+
 
 def apply_layout(state: AppState):
     try:
@@ -40,6 +42,7 @@ def apply_layout(state: AppState):
             dpg.set_item_height(TAG_RIGHT, vh - 35)
     except Exception:
         pass
+
 
 def on_resize(sender, app_data, state: AppState):
     # 항상 자동

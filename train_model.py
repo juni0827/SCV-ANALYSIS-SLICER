@@ -34,6 +34,7 @@ max_id = max(int(v) for v in token_to_id.values())
 VOCAB_SIZE = max_id + 1 + SPECIAL_TOKENS_COUNT
 print(f"Vocab Size: {VOCAB_SIZE}")
 
+
 # Model Definition (Must match inference_dsl.py)
 class LSTMEncoderDecoder(nn.Module):
     def __init__(self, vocab_size, embed_dim=64, hidden_dim=128):
@@ -47,25 +48,28 @@ class LSTMEncoderDecoder(nn.Module):
         # x: (batch, seq_len)
         batch_size = x.size(0)
         target_len = x.size(1) if target is None else target.size(1)
-        
+
         emb = self.embed(x)
         _, (h, c) = self.encoder(emb)
-        
-        dec_input = torch.full((batch_size, 1), SOS_IDX, dtype=torch.long, device=x.device)
+
+        dec_input = torch.full(
+            (batch_size, 1), SOS_IDX, dtype=torch.long, device=x.device
+        )
         outputs = []
-        
+
         for t in range(target_len):
             dec_emb = self.embed(dec_input)
             out, (h, c) = self.decoder(dec_emb, (h, c))
-            logits = self.fc_out(out) # (batch, 1, vocab)
+            logits = self.fc_out(out)  # (batch, 1, vocab)
             outputs.append(logits)
-            
+
             if target is not None and random.random() < teacher_forcing_ratio:
                 dec_input = target[:, t].unsqueeze(1)
             else:
                 dec_input = logits.argmax(dim=-1)
-                
+
         return torch.cat(outputs, dim=1)
+
 
 # Dataset
 class DSLDataset(Dataset):
@@ -75,61 +79,66 @@ class DSLDataset(Dataset):
             seq_len = random.randint(3, max_len)
             seq = random.choices(token_ids, k=seq_len)
             self.data.append(seq)
-            
+
     def __len__(self):
         return len(self.data)
-    
+
     def __getitem__(self, idx):
         # Input: [ID, ID, ...] -> Shifted by 3
         raw_seq = self.data[idx]
         input_seq = [x + SPECIAL_TOKENS_COUNT for x in raw_seq]
         return torch.tensor(input_seq, dtype=torch.long)
 
+
 def collate_fn(batch):
     # Pad sequences
     max_len = max(len(s) for s in batch)
     padded_batch = torch.full((len(batch), max_len), PAD_IDX, dtype=torch.long)
     for i, seq in enumerate(batch):
-        padded_batch[i, :len(seq)] = seq
+        padded_batch[i, : len(seq)] = seq
     return padded_batch
+
 
 # Training
 def train():
     all_token_ids = list(token_to_id.values())
     dataset = DSLDataset(NUM_SAMPLES, MAX_SEQ_LEN, all_token_ids)
-    dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn)
-    
+    dataloader = DataLoader(
+        dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn
+    )
+
     model = LSTMEncoderDecoder(VOCAB_SIZE, EMBED_DIM, HIDDEN_DIM)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
-    
+
     model.train()
     print("Training started...")
     for epoch in range(EPOCHS):
         total_loss = 0
         for batch in dataloader:
             optimizer.zero_grad()
-            
+
             # Target is same as input (Autoencoder)
-            output = model(batch, target=batch) # (batch, seq_len, vocab)
-            
+            output = model(batch, target=batch)  # (batch, seq_len, vocab)
+
             # Flatten for loss
             output_flat = output.view(-1, VOCAB_SIZE)
             target_flat = batch.view(-1)
-            
+
             loss = criterion(output_flat, target_flat)
             loss.backward()
             optimizer.step()
-            
+
             total_loss += loss.item()
-            
-        if (epoch+1) % 10 == 0:
+
+        if (epoch + 1) % 10 == 0:
             print(f"Epoch {epoch+1}/{EPOCHS}, Loss: {total_loss/len(dataloader):.4f}")
-            
+
     # Save Model
     save_path = Path(__file__).parent / "model.pt"
     torch.save(model.state_dict(), save_path)
     print(f"Model saved to {save_path}")
+
 
 if __name__ == "__main__":
     train()

@@ -1,6 +1,7 @@
 """
 GUI Application State
 """
+
 from __future__ import annotations
 from typing import Optional
 import pandas as pd
@@ -8,6 +9,7 @@ import pandas as pd
 
 class AppState:
     """Application state for GUI"""
+
     def __init__(self):
         self.df: Optional[pd.DataFrame] = None
         self.filtered_df: Optional[pd.DataFrame] = None

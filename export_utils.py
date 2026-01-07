@@ -1,8 +1,8 @@
-
 from __future__ import annotations
 from pathlib import Path
 import pandas as pd
 import json
+
 
 def save_dataframe(df: pd.DataFrame, path: str, fmt: str = "CSV") -> str:
     p = Path(path)
@@ -23,6 +23,7 @@ def save_dataframe(df: pd.DataFrame, path: str, fmt: str = "CSV") -> str:
     else:
         raise ValueError(f"Unsupported format: {fmt}")
     return str(p)
+
 
 def save_analysis_report(report: dict, path: str) -> str:
     p = Path(path)

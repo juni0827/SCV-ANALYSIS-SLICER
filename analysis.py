@@ -1,9 +1,9 @@
-
 from __future__ import annotations
 import numpy as np
 import pandas as pd
 
 EXT_NUM_STATS = ("count", "mean", "std", "min", "25%", "50%", "75%", "max")
+
 
 def column_profile(df: pd.DataFrame, col: str) -> dict:
     """Compute summary statistics for a single DataFrame column.
@@ -42,6 +42,7 @@ def column_profile(df: pd.DataFrame, col: str) -> dict:
             info["skew"] = float(pd.Series(vals).skew())
             info["kurtosis"] = float(pd.Series(vals).kurtosis())
     return info
+
 
 def quick_eda(df: pd.DataFrame) -> dict:
     """Generate basic exploratory data analysis information for a DataFrame.
