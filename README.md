@@ -50,8 +50,10 @@ pip install -r requirements.txt
 Launch the modern Tkinter-based interface with theme switching:
 
 ```bash
-python app.py
+python -m src.gui.app
 ```
+
+> **Note**: The canonical implementation is in the `src/` directory. Legacy root-level GUI files have been removed.
 
 Features:
 
@@ -185,7 +187,7 @@ SCV Analysis Slicer는 ML 기반 분석 기능을 갖춘 대규모 CSV 파일 �
 
 #### 핵심 분석
 
-- 모듈형 구조 (`app.py`, `ui.py`, `data_loader.py`, `analysis.py`, `visualization.py`, `utils.py`, `combinations.py`)
+- 모듈형 구조 (`src/core`, `src/gui`, `src/dsl`, `src/utils`)
 - 중앙값, IQR, 왜도, 첨도, 결측 비율 등의 확장 통계
 - 대규모 테이블을 페이지 단위로 미리보기 (최대 1000행)
 - 가능한 경우 가장 빠른 CSV 리더를 자동 선택 (`pyarrow`)
@@ -229,8 +231,10 @@ pip install -r requirements.txt
 테마 전환 기능이 있는 현대적인 Tkinter 기반 인터페이스 실행:
 
 ```bash
-python app.py
+python -m src.gui.app
 ```
+
+> **참고**: 정식 구현은 `src/` 디렉토리에 있습니다. 레거시 루트 레벨 GUI 파일이 제거되었습니다.
 
 기능:
 
