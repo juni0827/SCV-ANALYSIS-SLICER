@@ -187,7 +187,7 @@ SCV Analysis Slicer는 ML 기반 분석 기능을 갖춘 대규모 CSV 파일 �
 
 #### 핵심 분석
 
-- 모듈형 구조 (`app.py`, `ui.py`, `data_loader.py`, `analysis.py`, `visualization.py`, `utils.py`, `combinations.py`)
+- 모듈형 구조 (`src/core`, `src/gui`, `src/dsl`, `src/utils`)
 - 중앙값, IQR, 왜도, 첨도, 결측 비율 등의 확장 통계
 - 대규모 테이블을 페이지 단위로 미리보기 (최대 1000행)
 - 가능한 경우 가장 빠른 CSV 리더를 자동 선택 (`pyarrow`)
