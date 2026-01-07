@@ -217,7 +217,7 @@ def plot_generic(
     _finalize_fig_to_texture(fig, texture_tag, parent_tag)
 
 
-# --- Add: combinations add-on helpers (병합) ---
+# --- Add: combinations add-on helpers (merged) ---
 
 
 def plot_bar_topk(
@@ -669,7 +669,7 @@ def plot_time_series_decomposition(
     _finalize_fig_to_texture(fig, "hist_tex", parent_tag, width=960, height=600)
 
 
-# --- Advanced Visualization Functions (Use자 Request Feature) ---
+# --- Advanced Visualization Functions (user-requested features) ---
 
 
 def plot_scalar_field(

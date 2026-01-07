@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """
-통합 Combinations analysis Module (combinations.py)
+Integrated Combinations Analysis Module (combinations.py)
 
-이 Module은 Data프레임의 Column 간 관계를 종합적으로 분석합니다.
-- 수치형 Column 간 Correlation analysis
-- 범주형 Column 간 연관규칙 분석 (Cramér's V, 카이제곱 검정)
-- 수치형-범주형 간 ANOVA 분석
-- Performance 모니터링 및 Memory Optimization
-- CLI 인터페이스 제공
+This module comprehensively analyzes relationships between dataframe columns.
+- Correlation analysis between numeric columns
+- Association rule analysis between categorical columns (Cramér's V, chi-square test)
+- ANOVA analysis between numeric and categorical columns
+- Performance monitoring and memory optimization
+- CLI interface provided
 
 Usage:
-    # Python Module로 Use
+    # Use as Python module
     from combinations import AdvancedCombinationsAnalyzer
     analyzer = AdvancedCombinationsAnalyzer()
     results = analyzer.analyze_all_combinations(df)
 
-    # CLI로 Use
+    # Use as CLI
     python combinations.py --file data.csv --output results.json
     python combinations.py --file data.csv --dsl-tokens C1,C2,C3 --verbose
 """
@@ -36,7 +36,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
-# Optional적 의존성
+# Optional dependencies
 try:
     import psutil
 
@@ -91,14 +91,14 @@ class PerformanceMetrics:
 
 
 class PerformanceMonitor:
-    """Performance 모니터링 Class"""
+    """Performance monitoring class"""
 
     def __init__(self):
         self.metrics_history: List[PerformanceMetrics] = []
 
     @contextmanager
     def track_operation(self, operation_name: str):
-        """Task 수Row 시간 추적"""
+        """Track task execution time"""
         start_time = time.time()
         start_memory = psutil.virtual_memory().used if HAS_PSUTIL else 0
 
@@ -124,10 +124,10 @@ class PerformanceMonitor:
             )
 
             self.metrics_history.append(metrics)
-            logger.info(f"{operation_name} 완료: {metrics.duration:.2f}초")
+            logger.info(f"{operation_name} completed: {metrics.duration:.2f}seconds")
 
     def get_performance_report(self) -> Dict[str, Any]:
-        """Performance 보고서 Create"""
+        """Create performance report"""
         if not self.metrics_history:
             return {"error": "no_metrics_available"}
 
@@ -247,7 +247,7 @@ class AnalysisCache:
         return key
 
     def get(self, key: str) -> Optional[Any]:
-        """Cache에서 Data Import"""
+        """load data from cache"""
         cache_file = self.cache_dir / f"{key}.json"
 
         if not cache_file.exists():
@@ -294,7 +294,7 @@ class AdvancedCombinationsAnalyzer:
             AnalysisCache(self.config.cache_dir) if self.config.enable_caching else None
         )
 
-        logger.info(f"AdvancedCombinationsAnalyzer 초기화 완료")
+        logger.info(f"AdvancedCombinationsAnalyzer seconds기화 완료")
         logger.info(f"  - 병렬 처리: {self.config.parallel_processing}")
         logger.info(f"  - 메모리 최적화: {self.config.memory_optimization}")
         logger.info(f"  - 캐싱: {self.config.enable_caching}")
@@ -387,7 +387,7 @@ class AdvancedCombinationsAnalyzer:
             # Correlation analysis
             correlation_matrix = df[numerical_columns].corr()
 
-            # 강한 상관관계 찾기
+            # 강한 Correlation 찾기
             strong_correlations = []
             for i in range(len(numerical_columns)):
                 for j in range(i + 1, len(numerical_columns)):
@@ -402,14 +402,14 @@ class AdvancedCombinationsAnalyzer:
                                     "강함" if abs(corr_value) >= 0.7 else "보통"
                                 ),
                                 "direction": (
-                                    "양의 상관관계"
+                                    "양의 Correlation"
                                     if corr_value > 0
-                                    else "음의 상관관계"
+                                    else "음의 Correlation"
                                 ),
                             }
                         )
 
-            # 상관관계 순으로 Sort
+            # Correlation 순으로 Sort
             strong_correlations.sort(key=lambda x: abs(x["correlation"]), reverse=True)
 
             result = {
@@ -758,7 +758,7 @@ class AdvancedCombinationsAnalyzer:
                 [
                     f"수치형 컬럼 분석:",
                     f"  - 전체 조합: {num_results['total_combinations']}개",
-                    f"  - 강한 상관관계: {num_results['strong_correlations_count']}개",
+                    f"  - 강한 Correlation: {num_results['strong_correlations_count']}개",
                     f"  - 최대 상관계수: {num_results['summary']['max_correlation']:.3f}",
                     "",
                 ]
@@ -803,7 +803,7 @@ class AdvancedCombinationsAnalyzer:
                 [
                     f"성능 정보:",
                     f"  - 총 작업 수: {perf.get('total_operations', 0)}개",
-                    f"  - 총 실행 시간: {perf.get('total_duration', 0):.2f}초",
+                    f"  - 총 실행 시간: {perf.get('total_duration', 0):.2f}seconds",
                     f"  - 메모리 효율성: {perf.get('memory_efficiency', 'unknown')}",
                 ]
             )
@@ -813,7 +813,7 @@ class AdvancedCombinationsAnalyzer:
 
 # CLI Feature 통합
 def parse_arguments():
-    """명령줄 인수 파싱"""
+    """Command line argument parsing"""
     parser = argparse.ArgumentParser(description="고급 조합 분석 도구")
     parser.add_argument("--file", "-f", required=True, help="분석할 데이터 파일 경로")
     parser.add_argument("--output", "-o", help="결과 저장 경로 (선택사항)")
@@ -855,7 +855,7 @@ def setup_logging(verbose: bool = False):
 
 
 def main():
-    """CLI 메인 Function"""
+    """CLI Main function"""
     args = parse_arguments()
     setup_logging(args.verbose)
 
@@ -897,7 +897,7 @@ def main():
         if args.output:
             with open(args.output, "w", encoding="utf-8") as f:
                 json.dump(results, f, indent=2, ensure_ascii=False, default=str)
-            logger.info(f"결과 저장 완료: {args.output}")
+            logger.info(f"결과 저장 completed: {args.output}")
 
         return 0
 

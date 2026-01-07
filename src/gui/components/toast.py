@@ -12,7 +12,7 @@ class ToastWindow:
     def __init__(
         self, parent, message: str, kind: str = "info", is_dark_mode: bool = False
     ):
-        # 더 자연스러운 라이트/다크 Mode별 색상
+        # more natural per light/dark mode 색상
         if is_dark_mode:
             self.colors = {
                 "info": "#2C5F7D",
@@ -36,13 +36,13 @@ class ToastWindow:
         self.toast.overrideredirect(True)
         self.toast.configure(bg=self.colors.get(kind, self.colors["info"]))
 
-        # 화면 중앙 상단에 Position
+        # position at top center of screen
         parent.update_idletasks()
         x = parent.winfo_rootx() + (parent.winfo_width() // 2) - 150
         y = parent.winfo_rooty() + 50
         self.toast.geometry(f"300x60+{x}+{y}")
 
-        # 둥근 모서리 효과를 위한 프레임
+        # for rounded corner effect 프레임
         main_frame = tk.Frame(
             self.toast,
             bg=self.colors.get(kind, self.colors["info"]),
@@ -51,7 +51,7 @@ class ToastWindow:
         )
         main_frame.pack(fill="both", expand=True, padx=2, pady=2)
 
-        # Message 라벨
+        # message label
         label = tk.Label(
             main_frame,
             text=message,
@@ -62,14 +62,14 @@ class ToastWindow:
         )
         label.pack(expand=True, fill="both", padx=15, pady=15)
 
-        # 부드러운 나타나기 효과
+        # smooth fade-in effect
         self.fade_in()
 
-        # 3초 후 Automatic Close
+        # 3seconds 후 Automatic Close
         self.toast.after(3000, self.fade_out)
 
     def fade_in(self):
-        """부드러운 나타나기 효과"""
+        """smooth fade-in effect"""
         self.toast.attributes("-alpha", 0.0)
         self.fade_in_step(0.0)
 

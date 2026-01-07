@@ -91,11 +91,11 @@ class CSVAnalyzerApp:
             "dark": {
                 "bg": "#1E1E1E",
                 "panel_bg": "#2D2D30",
-                "text_color": "#CCCCCC",  # 더 부드러운 회색
-                "secondary_text": "#9E9E9E",  # 보조 텍스트도 부드럽게
+                "text_color": "#CCCCCC",  # softer gray
+                "secondary_text": "#9E9E9E",  # secondary text also soft
                 "accent": "#0E7EB8",
                 "button_bg": "#0E7EB8",
-                "button_fg": "#F5F5F5",  # 버튼 텍스트도 순백이 아닌 부드러운 흰색
+                "button_fg": "#F5F5F5",  # button text soft white instead of pure white
                 "entry_bg": "#3C3C3C",
                 "tree_bg": "#252526",
                 "border": "#3E3E42",
@@ -104,7 +104,7 @@ class CSVAnalyzerApp:
         }
 
     def update_widget_theme_optimized(self, widget, theme, visited=None, max_depth=10):
-        """Optimization된 테마 Update (재귀 Call 제한 및 캐싱)"""
+        """Optimized theme update (recursive call limit 및 캐싱)"""
         if visited is None:
             visited = set()
 
@@ -113,7 +113,7 @@ class CSVAnalyzerApp:
             return
         visited.add(widget_id)
 
-        # 최대 방문 제한 및 깊이 제한
+        # maximum visit limit 및 depth limit
         if len(visited) > 1000 or max_depth <= 0:
             return
 
@@ -960,7 +960,7 @@ class CSVAnalyzerApp:
         tree_container.grid_rowconfigure(0, weight=1)
         tree_container.grid_columnconfigure(0, weight=1)
 
-        # 초기 State
+        # seconds기 State
         self.current_sliced_data = None
         self.update_column_checkboxes()
 
@@ -1217,7 +1217,7 @@ class CSVAnalyzerApp:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.combinations_result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # 초기 안내 Message
+        # seconds기 안내 Message
         initial_message = """
 📊 Combinations analysis Tool
 
@@ -1334,7 +1334,7 @@ Analysis results는 아래에 표시됩니다.
             and "error" not in results["numerical_combinations"]
         ):
             num_results = results["numerical_combinations"]
-            detailed.extend(["🔢 수치형 컬럼 상관관계 분석:", "-" * 30])
+            detailed.extend(["🔢 수치형 컬럼 Correlation analysis:", "-" * 30])
 
             for idx, corr in enumerate(
                 num_results.get("strong_correlations", [])[:5], 1
@@ -1392,7 +1392,7 @@ Analysis results는 아래에 표시됩니다.
         preview_frame = ttk.Frame(self.notebook)
         self.notebook.add(preview_frame, text="Data Preview")
 
-        # 미리보기 라벨과 Row 수 Information
+        # Preview 라벨과 Row 수 Information
         header_frame = tk.Frame(preview_frame, bg=self.current_theme["panel_bg"])
         header_frame.pack(fill="x", padx=10, pady=(10, 5))
 
@@ -1535,13 +1535,13 @@ Analysis results는 아래에 표시됩니다.
         )
         self.viz_frame.pack(fill=tk.BOTH, expand=True)
 
-        # 초기 Message
+        # seconds기 Message
         self.analysis_text.insert(
             "1.0", "Select a column and click 'Analyze Column' to view statistics."
         )
         self.analysis_text.configure(state="disabled")
 
-        # 초기 Visualization Message
+        # seconds기 Visualization Message
         initial_viz_label = tk.Label(
             self.viz_frame,
             text="Select a column and click 'Create Visualization'\nto generate charts.",
@@ -1666,7 +1666,7 @@ Analysis results는 아래에 표시됩니다.
         # 슬라이서 탭의 Column 체크박스 Update
         self.update_column_checkboxes()
 
-        # 미리보기 Table Update (슬라이싱 적용)
+        # Preview Table Update (슬라이싱 적용)
         self.update_preview_table()
 
         file_name = Path(file_path).name
@@ -1678,7 +1678,7 @@ Analysis results는 아래에 표시됩니다.
         self.end_busy(f"Failed to load: {error_msg}", False)
 
     def update_preview_table(self):
-        """미리보기 Table Update (슬라이싱 적용)"""
+        """Preview Table Update (슬라이싱 적용)"""
         # 기존 Data Remove
         for item in self.preview_tree.get_children():
             self.preview_tree.delete(item)
@@ -2253,7 +2253,7 @@ Analysis results는 아래에 표시됩니다.
             for item in self.preview_tree.get_children():
                 self.preview_tree.delete(item)
 
-            # Column Header Configuration (최초 1회만)
+            # Column Header Configuration (최seconds 1회만)
             if not self.preview_tree.get_children():
                 self.preview_tree["columns"] = list(display_data.columns)
                 for col in display_data.columns:

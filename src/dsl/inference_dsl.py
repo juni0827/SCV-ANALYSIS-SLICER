@@ -17,8 +17,8 @@ PAD_IDX = 0
 SOS_IDX = 1
 EOS_IDX = 2
 
-# 모델 Compatible성을 위한 Token Filter링
-# 모델이 15개 Token으로 학습된 것으로 보임 (VOCAB_SIZE=15)
+# token filtering for model compatibility
+# model appears to be trained with 15 tokens (VOCAB_SIZE=15)
 SUPPORTED_TOKENS = [
     "C1",
     "C2",
@@ -33,7 +33,7 @@ SUPPORTED_TOKENS = [
     "C11",
     "C12",
 ]
-VOCAB_SIZE = 15  # 모델이 학습된 어휘 Size
+VOCAB_SIZE = 15  # vocabulary size the model was trained on
 
 
 class LSTMEncoderDecoder(nn.Module):
@@ -100,12 +100,12 @@ except Exception as e:
 
 
 def predict_dsl(input_tokens):
-    """DSL token Yes측"""
-    # Support되지 않는 Token Filter링
+    """DSL token prediction"""
+    # Filter unsupported tokens
     supported_tokens = [token for token in input_tokens if token in SUPPORTED_TOKENS]
 
     if not supported_tokens:
-        print("  지원되는 토큰이 없습니다. 기본 시퀀스를 사용합니다.")
+        print("  No supported tokens. Using default sequence.")
         return input_tokens
 
     # 모델이 Use Available한 경우만 Yes측 시도
@@ -129,5 +129,5 @@ def predict_dsl(input_tokens):
         return predicted_tokens if predicted_tokens else input_tokens
 
     except Exception as e:
-        print(f"  예측 중 오류 발생: {e}")
+        print(f"  예측 중 Error occurred: {e}")
         return input_tokens

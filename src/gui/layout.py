@@ -10,7 +10,7 @@ TAG_SPLITTER = "splitter_table"  # legacy (unused with group splitter)
 
 
 def auto_ratio(state: AppState):
-    """Automatic Ratio 산정: Column 수가 많을수록 오른쪽(표/그래프) 더 넓게, 좌측은 22–34% 범위."""
+    """Automatic ratio calculation: as the number of columns increases, wider right side (table/graph), left side 22-34% range."""
     try:
         vw = max(800, dpg.get_viewport_client_width())
         cols = int(state.df.shape[1]) if state.df is not None else 0
@@ -26,11 +26,11 @@ def apply_layout(state: AppState):
         vw = dpg.get_viewport_client_width()
         vh = dpg.get_viewport_client_height()
 
-        # 주창 Size
+        # Main window size
         dpg.set_item_width(TAG_PRIMARY, vw)
         dpg.set_item_height(TAG_PRIMARY, vh)
 
-        # 패널 폭
+        # Panel width
         left_w = max(int(vw * state.split_ratio), state.min_left_px)
         right_w = max(vw - left_w - 24, state.min_right_px)
 
@@ -45,6 +45,6 @@ def apply_layout(state: AppState):
 
 
 def on_resize(sender, app_data, state: AppState):
-    # 항상 Automatic
+    # Always automatic
     auto_ratio(state)
     apply_layout(state)

@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
 """
-통합 Combinations analysis Module (combinations.py)
+Integrated Combinations Analysis Module (combinations.py)
 
-이 Module은 Data프레임의 Column 간 관계를 종합적으로 분석합니다.
-- 수치형 Column 간 Correlation analysis (Pearson, Spearman)
-- 범주형 Column 간 연관규칙 분석 (Cramér's V, Theil's U, 카이제곱 검정)
-- 수치형-범주형 간 ANOVA 및 Kruskal-Wallis 분석
-- Performance 모니터링 및 고도화된 Memory Optimization
-- Joblib based Parallel Processing 및 캐싱
+This module comprehensively analyzes relationships between dataframe columns.
+- Correlation analysis between numeric columns
+- Association rule analysis between categorical columns (Cramér's V, chi-square test)
+- ANOVA analysis between numeric and categorical columns
+- Performance monitoring and memory optimization
+- CLI interface provided
 
 Usage:
-    # Python Module로 Use
+    # Use as Python module
     from combinations import AdvancedCombinationsAnalyzer
     analyzer = AdvancedCombinationsAnalyzer()
     results = analyzer.analyze_all_combinations(df)
 
-    # CLI로 Use
+    # Use as CLI
     python combinations.py --file data.csv --output results.json
+    python combinations.py --file data.csv --dsl-tokens C1,C2,C3 --verbose
 """
 
 import argparse
@@ -25,19 +26,17 @@ import json
 import logging
 import sys
 import time
-import gzip
-import pickle
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-# Required/Optional적 의존성
+# Optional적 의존성
 try:
     import psutil
 
@@ -46,18 +45,11 @@ except ImportError:
     HAS_PSUTIL = False
 
 try:
-    from scipy.stats import chi2_contingency, f_oneway, kruskal, spearmanr, entropy
+    from scipy.stats import chi2_contingency, f_oneway
 
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
-
-try:
-    from joblib import Parallel, delayed, Memory
-
-    HAS_JOBLIB = True
-except ImportError:
-    HAS_JOBLIB = False
 
 # Logging Configuration
 logger = logging.getLogger(__name__)
@@ -76,11 +68,10 @@ class AnalysisConfig:
     lift_threshold: float = 1.5
     eta2_threshold: float = 0.1
     parallel_processing: bool = True
-    n_jobs: int = -1  # -1: 모든 CPU 코어 Use
+    max_workers: int = 4
     enable_caching: bool = True
     cache_dir: str = ".analysis_cache"
     memory_optimization: bool = True
-    advanced_stats: bool = True  # Theil's U, Spearman 등 고급 Statistics Use 여부
 
 
 @dataclass
@@ -100,14 +91,14 @@ class PerformanceMetrics:
 
 
 class PerformanceMonitor:
-    """Performance 모니터링 Class"""
+    """Performance monitoring class"""
 
     def __init__(self):
         self.metrics_history: List[PerformanceMetrics] = []
 
     @contextmanager
     def track_operation(self, operation_name: str):
-        """Task 수Row 시간 추적"""
+        """Track task execution time"""
         start_time = time.time()
         start_memory = psutil.virtual_memory().used if HAS_PSUTIL else 0
 
@@ -151,54 +142,49 @@ class PerformanceMonitor:
             "average_duration": total_duration / len(self.metrics_history),
             "average_memory_delta": avg_memory_delta,
             "memory_efficiency": (
-                "good" if avg_memory_delta < 100 * 1024 * 1024 else "needs_optimization"
+                "good" if avg_memory_delta < 50 * 1024 * 1024 else "needs_optimization"
             ),
         }
 
 
 class MemoryOptimizer:
-    """고도화된 Memory Optimization Class"""
+    """Memory Optimization Class"""
 
     @staticmethod
     def optimize_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-        """Data프레임 Memory Optimization (Downcasting & Smart Categorization)"""
+        """Data프레임 Memory Optimization"""
         optimized_df = df.copy()
 
-        # 1. 수치형 Data 다운캐스팅
-        for col in optimized_df.select_dtypes(include=["int", "float"]).columns:
+        for col in optimized_df.columns:
+            col_type = optimized_df[col].dtype
+
             try:
-                optimized_df[col] = pd.to_numeric(optimized_df[col], downcast="integer")
-            except:
-                pass
-            try:
-                if optimized_df[col].dtype == "float64":
-                    optimized_df[col] = pd.to_numeric(
-                        optimized_df[col], downcast="float"
-                    )
-            except:
-                pass
-
-        # 2. 객체형(문자열) Data Optimization
-        for col in optimized_df.select_dtypes(include=["object"]).columns:
-            try:
-                num_unique = optimized_df[col].nunique()
-                num_total = len(optimized_df)
-
-                # 카테고리 변환 조건: UniqueValue Ratio이 Less than 50%이고, UniqueValue이 아주 많지 않은 경우
-                if num_unique / num_total < 0.5:
-                    # Add 조건: Average 문자열 길이가 짧은 경우에만 변환 (Memory 오버헤드 방지)
-                    # 샘플링하여 Average 길이 측정
-                    sample = optimized_df[col].dropna().sample(min(1000, num_total))
-                    if sample.empty:
-                        continue
-
-                    avg_len = sample.map(str).map(len).mean()
-
-                    # 문자열이 길거나 반복이 많으면 카테고리가 유리
-                    if avg_len > 2 or num_unique < 1000:
+                if col_type == "object":
+                    # 범주형 Data로 변환 Available한지 Confirmation
+                    if optimized_df[col].nunique() / len(optimized_df) < 0.5:
                         optimized_df[col] = optimized_df[col].astype("category")
+                elif col_type == "int64":
+                    # Downcast integer types
+                    col_min, col_max = optimized_df[col].min(), optimized_df[col].max()
+                    if col_min >= 0:
+                        if col_max < 256:
+                            optimized_df[col] = optimized_df[col].astype("uint8")
+                        elif col_max < 65536:
+                            optimized_df[col] = optimized_df[col].astype("uint16")
+                        elif col_max < 4294967296:
+                            optimized_df[col] = optimized_df[col].astype("uint32")
+                    else:
+                        if col_min > -129 and col_max < 128:
+                            optimized_df[col] = optimized_df[col].astype("int8")
+                        elif col_min > -32769 and col_max < 32768:
+                            optimized_df[col] = optimized_df[col].astype("int16")
+                        elif col_min > -2147483649 and col_max < 2147483648:
+                            optimized_df[col] = optimized_df[col].astype("int32")
+                elif col_type == "float64":
+                    # Downcast float types
+                    optimized_df[col] = optimized_df[col].astype("float32")
             except Exception as e:
-                logger.warning(f"컬럼 {col} 최적화 중 오류: {e}")
+                logger.warning(f"컬럼 {col} 최적화 실패: {e}")
                 continue
 
         return optimized_df
@@ -225,14 +211,25 @@ class MemoryOptimizer:
         """Optimization 잠재력 계산"""
         try:
             original_memory = df.memory_usage(deep=True).sum()
-            # 실제 변환하지 않고 추정만 하거나, 샘플로 Test
-            return "high" if original_memory > 100 * 1024 * 1024 else "low"
+            optimized_df = MemoryOptimizer.optimize_dataframe(df)
+            optimized_memory = optimized_df.memory_usage(deep=True).sum()
+
+            savings_percent = (
+                (original_memory - optimized_memory) / original_memory * 100
+            )
+
+            if savings_percent > 30:
+                return "high"
+            elif savings_percent > 15:
+                return "medium"
+            else:
+                return "low"
         except Exception:
             return "unknown"
 
 
 class AnalysisCache:
-    """압축 및 Pickle을 Support하는 고급 Cache Class"""
+    """Analysis results Cache Class"""
 
     def __init__(self, cache_dir: str = ".analysis_cache", max_age_hours: int = 24):
         self.cache_dir = Path(cache_dir)
@@ -243,15 +240,15 @@ class AnalysisCache:
         self, df_hash: str, analysis_type: str, params: Dict[str, Any]
     ) -> str:
         """Cache 키 Create"""
-        params_str = json.dumps(params, sort_keys=True, default=str)
+        params_str = json.dumps(params, sort_keys=True)
         key = hashlib.md5(
             f"{df_hash}_{analysis_type}_{params_str}".encode()
         ).hexdigest()
         return key
 
     def get(self, key: str) -> Optional[Any]:
-        """Cache에서 Data Import (gzip + pickle)"""
-        cache_file = self.cache_dir / f"{key}.pkl.gz"
+        """Cache에서 Data Import"""
+        cache_file = self.cache_dir / f"{key}.json"
 
         if not cache_file.exists():
             return None
@@ -259,139 +256,31 @@ class AnalysisCache:
         # Cache File 나이 Confirmation
         file_age_hours = (time.time() - cache_file.stat().st_mtime) / 3600
         if file_age_hours > self.max_age_hours:
-            try:
-                cache_file.unlink()
-            except:
-                pass
+            cache_file.unlink()
             return None
 
         try:
-            with gzip.open(cache_file, "rb") as f:
-                return pickle.load(f)
-        except Exception as e:
-            logger.warning(f"캐시 로드 실패: {e}")
+            with open(cache_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
             return None
 
     def set(self, key: str, data: Any):
-        """Data를 Cache에 Save (gzip + pickle)"""
-        cache_file = self.cache_dir / f"{key}.pkl.gz"
+        """Data를 Cache에 Save"""
+        cache_file = self.cache_dir / f"{key}.json"
         try:
-            with gzip.open(cache_file, "wb") as f:
-                pickle.dump(data, f)
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, default=str)
         except Exception as e:
             logger.warning(f"캐시 저장 실패: {e}")
 
     def clear_expired(self):
         """만료된 Cache File들 Cleanup"""
         current_time = time.time()
-        for cache_file in self.cache_dir.glob("*.pkl.gz"):
-            try:
-                file_age_hours = (current_time - cache_file.stat().st_mtime) / 3600
-                if file_age_hours > self.max_age_hours:
-                    cache_file.unlink()
-            except:
-                pass
-
-
-# --- Statistical analysis Helper Function (Parallel Processing를 for Class 외부로 분리) ---
-
-
-def calculate_theils_u(x, y):
-    """Theil's U (Uncertainty Coefficient) 계산 - 비대칭 연관성"""
-    s_xy = conditional_entropy(x, y)
-    x_counter = pd.Series(x).value_counts()
-    total_occurrences = x_counter.sum()
-    p_x = x_counter / total_occurrences
-    s_x = -np.sum(p_x * np.log(p_x))
-    if s_x == 0:
-        return 0
-    return (s_x - s_xy) / s_x
-
-
-def conditional_entropy(x, y):
-    """조건부 엔트로피 H(X|Y)"""
-    y_counter = pd.Series(y).value_counts()
-    xy_counter = pd.Series(list(zip(x, y))).value_counts()
-    total_occurrences = y_counter.sum()
-    entropy = 0
-    for xy, count in xy_counter.items():
-        p_xy = count / total_occurrences
-        p_y = y_counter[xy[1]] / total_occurrences
-        entropy += p_xy * np.log(p_y / p_xy)
-    return -entropy
-
-
-def process_categorical_pair(df_subset, col1, col2, config_dict):
-    """범주형 쌍 분석 (Parallel Processing용)"""
-    try:
-        crosstab = pd.crosstab(df_subset[col1], df_subset[col2])
-
-        # 카이제곱 검정
-        if HAS_SCIPY:
-            chi2, p_value, dof, expected = chi2_contingency(crosstab)
-            n = crosstab.sum().sum()
-            min_dim = min(crosstab.shape) - 1
-            cramers_v = np.sqrt(chi2 / (n * min_dim)) if min_dim > 0 else 0
-
-            # Theil's U (비대칭)
-            theils_u = calculate_theils_u(df_subset[col1], df_subset[col2])
-        else:
-            chi2, p_value, cramers_v, theils_u = 0, 1, 0, 0
-
-        # 연관 규칙 (Lift)
-        rules = []  # _calculate_association_rules 로직 인라인화 or 간소화
-        # (Performance을 for 여기서는 생략하거나 필요시 Add)
-
-        return {
-            "column1": col1,
-            "column2": col2,
-            "chi2_statistic": float(chi2),
-            "p_value": float(p_value),
-            "cramers_v": float(cramers_v),
-            "theils_u": float(theils_u),
-            "significant": p_value < 0.05,
-        }
-    except Exception as e:
-        return None
-
-
-def process_mixed_pair(df_subset, num_col, cat_col, config_dict):
-    """혼합형 쌍 분석 (Parallel Processing용)"""
-    try:
-        groups = [group[num_col].values for name, group in df_subset.groupby(cat_col)]
-        groups = [g for g in groups if len(g) >= config_dict["min_sample_size"]]
-
-        if len(groups) < 2:
-            return None
-
-        if HAS_SCIPY:
-            # ANOVA
-            f_stat, p_value = f_oneway(*groups)
-            # Kruskal-Wallis (비모수)
-            k_stat, k_p_value = kruskal(*groups)
-        else:
-            f_stat, p_value, k_stat, k_p_value = 0, 1, 0, 1
-
-        # Eta Squared
-        # 간단한 계산
-        all_data = np.concatenate(groups)
-        grand_mean = np.mean(all_data)
-        sst = np.sum((all_data - grand_mean) ** 2)
-        ssb = sum(len(g) * (np.mean(g) - grand_mean) ** 2 for g in groups)
-        eta_squared = ssb / sst if sst > 0 else 0
-
-        return {
-            "numerical_column": num_col,
-            "categorical_column": cat_col,
-            "f_statistic": float(f_stat),
-            "p_value": float(p_value),
-            "kruskal_statistic": float(k_stat),
-            "kruskal_p_value": float(k_p_value),
-            "eta_squared": float(eta_squared),
-            "significant": p_value < 0.05,
-        }
-    except Exception:
-        return None
+        for cache_file in self.cache_dir.glob("*.json"):
+            file_age_hours = (current_time - cache_file.stat().st_mtime) / 3600
+            if file_age_hours > self.max_age_hours:
+                cache_file.unlink()
 
 
 class AdvancedCombinationsAnalyzer:
@@ -406,18 +295,14 @@ class AdvancedCombinationsAnalyzer:
         )
 
         logger.info(f"AdvancedCombinationsAnalyzer 초기화 완료")
-        logger.info(
-            f"  - 병렬 처리: {self.config.parallel_processing} (Jobs: {self.config.n_jobs})"
-        )
+        logger.info(f"  - 병렬 처리: {self.config.parallel_processing}")
         logger.info(f"  - 메모리 최적화: {self.config.memory_optimization}")
-        logger.info(f"  - 고급 통계: {self.config.advanced_stats}")
+        logger.info(f"  - 캐싱: {self.config.enable_caching}")
 
     def _get_dataframe_hash(self, df: pd.DataFrame) -> str:
         """Data프레임 Hash Create"""
         try:
-            # Data의 Some만 샘플링하여 Hash Create (속도 Optimization)
-            sample = df.sample(min(100, len(df)), random_state=42)
-            info_str = f"{df.shape}_{list(df.columns)}_{sample.values.tobytes()}"
+            info_str = f"{df.shape}_{list(df.columns)}_{df.dtypes.to_dict()}"
             return hashlib.md5(info_str.encode()).hexdigest()[:16]
         except Exception:
             return str(hash(str(df.shape)))
@@ -480,7 +365,7 @@ class AdvancedCombinationsAnalyzer:
             return results
 
     def _analyze_numerical_combinations(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """수치형 Column 간 Combinations analysis (Pearson & Spearman)"""
+        """수치형 Column 간 Combinations analysis"""
         numerical_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
         if len(numerical_columns) < 2:
@@ -496,43 +381,35 @@ class AdvancedCombinationsAnalyzer:
                 )
                 cached_result = self.cache.get(cache_key)
                 if cached_result:
+                    logger.info("수치형 분석 캐시 결과 사용")
                     return cached_result
 
-            # Pearson 상관관계
-            corr_matrix = df[numerical_columns].corr(method="pearson")
+            # Correlation analysis
+            correlation_matrix = df[numerical_columns].corr()
 
-            # Spearman 상관관계 (비선형 관계 탐지)
-            if self.config.advanced_stats:
-                spearman_matrix = df[numerical_columns].corr(method="spearman")
-            else:
-                spearman_matrix = corr_matrix
-
+            # 강한 상관관계 찾기
             strong_correlations = []
             for i in range(len(numerical_columns)):
                 for j in range(i + 1, len(numerical_columns)):
-                    col1, col2 = numerical_columns[i], numerical_columns[j]
-                    p_corr = corr_matrix.iloc[i, j]
-                    s_corr = spearman_matrix.iloc[i, j]
-
-                    # 둘 중 하나라도 임계Value을 넘으면 기록
-                    max_corr = max(abs(p_corr), abs(s_corr))
-
-                    if max_corr >= self.config.correlation_threshold:
+                    corr_value = correlation_matrix.iloc[i, j]
+                    if abs(corr_value) >= self.config.correlation_threshold:
                         strong_correlations.append(
                             {
-                                "column1": col1,
-                                "column2": col2,
-                                "correlation": float(p_corr),
-                                "spearman_correlation": float(s_corr),
-                                "strength": "강함" if max_corr >= 0.7 else "보통",
-                                "type": (
-                                    "선형"
-                                    if abs(p_corr) >= abs(s_corr)
-                                    else "비선형(단조)"
+                                "column1": numerical_columns[i],
+                                "column2": numerical_columns[j],
+                                "correlation": float(corr_value),
+                                "strength": (
+                                    "강함" if abs(corr_value) >= 0.7 else "보통"
+                                ),
+                                "direction": (
+                                    "양의 상관관계"
+                                    if corr_value > 0
+                                    else "음의 상관관계"
                                 ),
                             }
                         )
 
+            # 상관관계 순으로 Sort
             strong_correlations.sort(key=lambda x: abs(x["correlation"]), reverse=True)
 
             result = {
@@ -541,27 +418,33 @@ class AdvancedCombinationsAnalyzer:
                 // 2,
                 "strong_correlations_count": len(strong_correlations),
                 "strong_correlations": strong_correlations[: self.config.top_k],
+                "correlation_matrix": correlation_matrix.round(3).to_dict(),
                 "summary": {
                     "max_correlation": (
-                        float(corr_matrix.abs().max().max())
-                        if not corr_matrix.empty
+                        float(correlation_matrix.abs().max().max())
+                        if len(strong_correlations) > 0
                         else 0
+                    ),
+                    "avg_correlation": float(correlation_matrix.abs().mean().mean()),
+                    "highly_correlated_pairs": len(
+                        [c for c in strong_correlations if abs(c["correlation"]) >= 0.7]
                     ),
                 },
             }
 
+            # Cache Save
             if self.cache and cache_key:
                 self.cache.set(cache_key, result)
 
             return result
 
     def _analyze_categorical_combinations(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """범주형 Column 간 Combinations analysis (Parallel Processing 적용)"""
+        """범주형 Column 간 Combinations analysis"""
         categorical_columns = df.select_dtypes(
             include=["object", "category"]
         ).columns.tolist()
 
-        # 카디널리티 Filter링
+        # 카디널리티가 너무 높은 Column Exclude
         categorical_columns = [
             col
             for col in categorical_columns
@@ -581,33 +464,58 @@ class AdvancedCombinationsAnalyzer:
                 )
                 cached_result = self.cache.get(cache_key)
                 if cached_result:
+                    logger.info("범주형 분석 캐시 결과 사용")
                     return cached_result
 
-            pairs = []
+            associations = []
+
             for i in range(len(categorical_columns)):
                 for j in range(i + 1, len(categorical_columns)):
-                    pairs.append((categorical_columns[i], categorical_columns[j]))
+                    col1, col2 = categorical_columns[i], categorical_columns[j]
 
-            # Parallel Processing Execution
-            if HAS_JOBLIB and self.config.parallel_processing:
-                results = Parallel(n_jobs=self.config.n_jobs)(
-                    delayed(process_categorical_pair)(
-                        df[[p[0], p[1]]], p[0], p[1], asdict(self.config)
-                    )
-                    for p in pairs
-                )
-            else:
-                results = [
-                    process_categorical_pair(df, p[0], p[1], asdict(self.config))
-                    for p in pairs
-                ]
+                    try:
+                        # 교차표 Create
+                        crosstab = pd.crosstab(df[col1], df[col2])
 
-            # None Remove 및 Sort
-            associations = [r for r in results if r is not None]
+                        # 카이제곱 검정 (scipy가 있는 경우만)
+                        if HAS_SCIPY:
+                            chi2, p_value, dof, expected = chi2_contingency(crosstab)
+
+                            # Cramér's V 계산
+                            n = crosstab.sum().sum()
+                            cramers_v = np.sqrt(chi2 / (n * (min(crosstab.shape) - 1)))
+                        else:
+                            chi2, p_value, cramers_v = 0, 1, 0
+
+                        # 연관 규칙 계산
+                        rules = self._calculate_association_rules(crosstab)
+
+                        association = {
+                            "column1": col1,
+                            "column2": col2,
+                            "chi2_statistic": float(chi2),
+                            "p_value": float(p_value),
+                            "cramers_v": float(cramers_v),
+                            "association_strength": self._get_association_strength(
+                                cramers_v
+                            ),
+                            "significant": p_value < 0.05,
+                            "top_rules": rules[:5],
+                        }
+
+                        associations.append(association)
+
+                    except Exception as e:
+                        logger.warning(f"범주형 분석 오류 ({col1} vs {col2}): {e}")
+                        continue
+
+            # 강도순으로 Sort
             associations.sort(key=lambda x: x["cramers_v"], reverse=True)
 
             result = {
-                "total_combinations": len(pairs),
+                "total_combinations": len(categorical_columns)
+                * (len(categorical_columns) - 1)
+                // 2,
                 "significant_associations_count": len(
                     [a for a in associations if a["significant"]]
                 ),
@@ -618,21 +526,31 @@ class AdvancedCombinationsAnalyzer:
                         if associations
                         else 0
                     ),
+                    "avg_cramers_v": (
+                        float(np.mean([a["cramers_v"] for a in associations]))
+                        if associations
+                        else 0
+                    ),
+                    "strong_associations": len(
+                        [a for a in associations if a["cramers_v"] >= 0.3]
+                    ),
                 },
             }
 
+            # Cache Save
             if self.cache and cache_key:
                 self.cache.set(cache_key, result)
 
             return result
 
     def _analyze_mixed_combinations(self, df: pd.DataFrame) -> Dict[str, Any]:
-        """수치형-범주형 간 Combinations analysis (Parallel Processing 적용)"""
+        """수치형-범주형 간 Combinations analysis (ANOVA)"""
         numerical_columns = df.select_dtypes(include=[np.number]).columns.tolist()
         categorical_columns = df.select_dtypes(
             include=["object", "category"]
         ).columns.tolist()
 
+        # 카디널리티 제한
         categorical_columns = [
             col
             for col in categorical_columns
@@ -652,36 +570,68 @@ class AdvancedCombinationsAnalyzer:
                 cache_key = self.cache.get_cache_key(
                     df_hash,
                     "mixed",
-                    {"num": numerical_columns, "cat": categorical_columns},
+                    {
+                        "numerical": numerical_columns,
+                        "categorical": categorical_columns,
+                    },
                 )
                 cached_result = self.cache.get(cache_key)
                 if cached_result:
+                    logger.info("혼합형 분석 캐시 결과 사용")
                     return cached_result
 
-            pairs = []
-            for num in numerical_columns:
-                for cat in categorical_columns:
-                    pairs.append((num, cat))
+            anova_results = []
 
-            # Parallel Processing Execution
-            if HAS_JOBLIB and self.config.parallel_processing:
-                results = Parallel(n_jobs=self.config.n_jobs)(
-                    delayed(process_mixed_pair)(
-                        df[[p[0], p[1]]], p[0], p[1], asdict(self.config)
-                    )
-                    for p in pairs
-                )
-            else:
-                results = [
-                    process_mixed_pair(df, p[0], p[1], asdict(self.config))
-                    for p in pairs
-                ]
+            for num_col in numerical_columns:
+                for cat_col in categorical_columns:
+                    try:
+                        # 각 Group별 Data 준비
+                        groups = df.groupby(cat_col)[num_col].apply(list)
 
-            anova_results = [r for r in results if r is not None]
+                        # 최소 샘플 Size Confirmation
+                        if all(
+                            len(group) >= self.config.min_sample_size
+                            for group in groups
+                        ):
+                            if HAS_SCIPY:
+                                f_stat, p_value = f_oneway(*groups)
+                            else:
+                                f_stat, p_value = 0, 1
+
+                            # 효과 Size (eta-squared) 계산
+                            eta_squared = self._calculate_eta_squared(
+                                df, num_col, cat_col
+                            )
+
+                            # Group별 Statistics
+                            group_stats = (
+                                df.groupby(cat_col)[num_col]
+                                .agg(["mean", "std", "count"])
+                                .round(3)
+                            )
+
+                            anova_result = {
+                                "numerical_column": num_col,
+                                "categorical_column": cat_col,
+                                "f_statistic": float(f_stat),
+                                "p_value": float(p_value),
+                                "eta_squared": float(eta_squared),
+                                "effect_size": self._get_effect_size(eta_squared),
+                                "significant": p_value < 0.05,
+                                "group_stats": group_stats.to_dict(),
+                            }
+
+                            anova_results.append(anova_result)
+
+                    except Exception as e:
+                        logger.warning(f"ANOVA 분석 오류 ({num_col} vs {cat_col}): {e}")
+                        continue
+
+            # 효과 Size순으로 Sort
             anova_results.sort(key=lambda x: x["eta_squared"], reverse=True)
 
             result = {
-                "total_combinations": len(pairs),
+                "total_combinations": len(numerical_columns) * len(categorical_columns),
                 "significant_results_count": len(
                     [r for r in anova_results if r["significant"]]
                 ),
@@ -692,18 +642,107 @@ class AdvancedCombinationsAnalyzer:
                         if anova_results
                         else 0
                     ),
+                    "avg_eta_squared": (
+                        float(np.mean([r["eta_squared"] for r in anova_results]))
+                        if anova_results
+                        else 0
+                    ),
+                    "large_effects": len(
+                        [r for r in anova_results if r["eta_squared"] >= 0.14]
+                    ),
                 },
             }
 
+            # Cache Save
             if self.cache and cache_key:
                 self.cache.set(cache_key, result)
 
             return result
 
+    def _calculate_association_rules(
+        self, crosstab: pd.DataFrame
+    ) -> List[Dict[str, Any]]:
+        """연관 규칙 계산"""
+        rules = []
+        total = crosstab.sum().sum()
+
+        for row_idx, row_name in enumerate(crosstab.index):
+            for col_idx, col_name in enumerate(crosstab.columns):
+                # 지지도 (Support)
+                support = crosstab.iloc[row_idx, col_idx] / total
+
+                # 신뢰도 (Confidence)
+                confidence = (
+                    crosstab.iloc[row_idx, col_idx] / crosstab.iloc[row_idx, :].sum()
+                )
+
+                # 향상도 (Lift)
+                expected = (
+                    crosstab.iloc[row_idx, :].sum() * crosstab.iloc[:, col_idx].sum()
+                ) / total
+                lift = (
+                    (crosstab.iloc[row_idx, col_idx] / expected) if expected > 0 else 0
+                )
+
+                if lift >= self.config.lift_threshold:
+                    rules.append(
+                        {
+                            "antecedent": str(row_name),
+                            "consequent": str(col_name),
+                            "support": float(support),
+                            "confidence": float(confidence),
+                            "lift": float(lift),
+                        }
+                    )
+
+        return sorted(rules, key=lambda x: x["lift"], reverse=True)
+
+    def _get_association_strength(self, cramers_v: float) -> str:
+        """연관성 강도 분류"""
+        if cramers_v >= 0.5:
+            return "매우 강함"
+        elif cramers_v >= 0.3:
+            return "강함"
+        elif cramers_v >= 0.1:
+            return "보통"
+        else:
+            return "약함"
+
+    def _calculate_eta_squared(
+        self, df: pd.DataFrame, num_col: str, cat_col: str
+    ) -> float:
+        """효과 Size (eta-squared) 계산"""
+        try:
+            groups = df.groupby(cat_col)[num_col]
+            overall_mean = df[num_col].mean()
+
+            # Group 간 제곱합 (SSB)
+            ssb = sum(
+                len(group) * (group.mean() - overall_mean) ** 2 for _, group in groups
+            )
+
+            # 총 제곱합 (SST)
+            sst = sum((df[num_col] - overall_mean) ** 2)
+
+            return ssb / sst if sst > 0 else 0
+        except Exception:
+            return 0
+
+    def _get_effect_size(self, eta_squared: float) -> str:
+        """효과 Size 분류"""
+        if eta_squared >= 0.14:
+            return "큰 효과"
+        elif eta_squared >= 0.06:
+            return "중간 효과"
+        elif eta_squared >= 0.01:
+            return "작은 효과"
+        else:
+            return "효과 없음"
+
     def get_analysis_summary(self, results: Dict[str, Any]) -> str:
         """Analysis results 요약 Create"""
         summary_lines = [
-            "=== 고급 조합 분석 결과 요약 ===",
+            "=== 조합 분석 결과 요약 ===",
             f"분석 시간: {results['metadata']['analysis_timestamp']}",
             f"전체 데이터: {results['metadata']['total_rows']:,}행 × {results['metadata']['total_columns']}열",
             "",
@@ -749,7 +788,7 @@ class AdvancedCombinationsAnalyzer:
             mixed_results = results["mixed_combinations"]
             summary_lines.extend(
                 [
-                    f"혼합형 분석 (ANOVA/Kruskal):",
+                    f"혼합형 분석 (ANOVA):",
                     f"  - 전체 조합: {mixed_results['total_combinations']}개",
                     f"  - 유의한 결과: {mixed_results['significant_results_count']}개",
                     f"  - 최대 효과 크기: {mixed_results['summary']['max_eta_squared']:.3f}",

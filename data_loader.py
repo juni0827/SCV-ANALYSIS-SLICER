@@ -35,7 +35,7 @@ def optimize_dtypes(df: pd.DataFrame) -> pd.DataFrame:
             num_unique = df[col].nunique()
             num_total = len(df[col])
 
-            if num_unique / num_total < 0.5:  # Less than 50% unique values
+            if num_unique / num_total < 0.5:  # Less than 50% UniqueValue
                 df[col] = df[col].astype("category")
         elif df[col].dtype == "int64":
             # Downcast integer types
@@ -65,14 +65,14 @@ def load_csv_optimized(
 
     try:
         # Load large files in chunks
-        if chunk_size and p.stat().st_size > 100 * 1024 * 1024:  # Over 100MB
+        if chunk_size and p.stat().st_size > 100 * 1024 * 1024:  # 100MB or more
             chunks = []
             for chunk in pd.read_csv(
                 p, chunksize=chunk_size, dtype=dtype_map, engine=engine
             ):
                 chunks.append(chunk)
                 # Monitor memory usage
-                if len(chunks) * chunk_size > 1000000:  # Over 1 million rows
+                if len(chunks) * chunk_size > 1000000:  # 100만 Row 이상
                     break
             df = pd.concat(chunks, ignore_index=True)
         else:

@@ -16,11 +16,24 @@ id_to_token = {int(k): v for k, v in tokenizer["id_to_token"].items()}
 PAD_IDX = 0
 SOS_IDX = 1
 EOS_IDX = 2
-SPECIAL_TOKENS_COUNT = 3
 
-# Calculate VOCAB_SIZE dynamically
-max_id = max(token_to_id.values()) if token_to_id else 0
-VOCAB_SIZE = max_id + 1 + SPECIAL_TOKENS_COUNT
+# 모델 Compatible성을 위한 Token Filter링
+# 모델이 15개 Token으로 학습된 것으로 보임 (VOCAB_SIZE=15)
+SUPPORTED_TOKENS = [
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "C7",
+    "C8",
+    "C9",
+    "C10",
+    "C11",
+    "C12",
+]
+VOCAB_SIZE = 15  # 모델이 학습된 어휘 Size
 
 
 class LSTMEncoderDecoder(nn.Module):
@@ -87,33 +100,31 @@ except Exception as e:
 
 
 def predict_dsl(input_tokens):
-    """DSL token Yes측"""
-    if not input_tokens:
+    """DSL token prediction"""
+    # Filter unsupported tokens
+    supported_tokens = [token for token in input_tokens if token in SUPPORTED_TOKENS]
+
+    if not supported_tokens:
+        print("  No supported tokens. Using default sequence.")
         return input_tokens
 
+    # 모델이 Use Available한 경우만 Yes측 시도
     if not MODEL_AVAILABLE:
         return input_tokens
 
     try:
-        # Convert tokens to IDs
-        input_ids = []
-        for token in input_tokens:
-            if token in token_to_id:
-                # Shift by SPECIAL_TOKENS_COUNT
-                input_ids.append(token_to_id[token] + SPECIAL_TOKENS_COUNT)
-
-        if not input_ids:
-            return input_tokens
-
+        # Support되는 Token만 Use해서 Yes측
+        token_mapping = {token: idx for idx, token in enumerate(SUPPORTED_TOKENS)}
+        input_ids = [token_mapping.get(token, 0) + 3 for token in supported_tokens]
         input_tensor = torch.tensor([input_ids])
         output_ids = model.generate(input_tensor)[0]
 
-        # Convert IDs back to tokens
+        # Yes측 Result를 Token으로 변환
         predicted_tokens = []
         for i in output_ids:
-            idx = i.item() - SPECIAL_TOKENS_COUNT
-            if idx in id_to_token:
-                predicted_tokens.append(id_to_token[idx])
+            idx = i.item() - 3
+            if 0 <= idx < len(SUPPORTED_TOKENS):
+                predicted_tokens.append(SUPPORTED_TOKENS[idx])
 
         return predicted_tokens if predicted_tokens else input_tokens
 

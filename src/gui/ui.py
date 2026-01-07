@@ -9,7 +9,7 @@ from src.core.analysis import column_profile
 from src.gui.visualization import (
     plot_quick_distribution,
     plot_generic,
-    # 병합본 visualization.py의 Add 플롯들
+    # merged visualization.py additional plots
     plot_heatmap_crosstab,
     plot_scatter_corr,
     plot_box_group,
@@ -44,7 +44,7 @@ TAG_COMB_SCROLL = "comb_scroll"
 TAG_RECO_GROUP = "reco_group"
 TAG_FILE_DROP = "file_drop_handler"
 
-LAST_REPORT = None  # 마지막 조합/Analysis results Save
+LAST_REPORT = None  # last combination/analysis results saved
 
 
 def _safe_set_value(tag: str, value: str):
@@ -176,7 +176,9 @@ def build_left_panel(state: AppState):
         with dpg.collapsing_header(label="Export", default_open=True):
             dpg.add_text("Export data / analysis")
             dpg.add_input_text(
-                label="Filename", tag="export_filename", hint="예: results/analysis_out"
+                label="Filename",
+                tag="export_filename",
+                hint="example: results/analysis_out",
             )
             dpg.add_combo(
                 ("CSV", "Excel", "JSON"), tag="export_format", default_value="CSV"
@@ -331,7 +333,7 @@ def on_files_dropped(sender, app_data, state: AppState):
         on_file_selected(state, file_path)
     except Exception as e:
         _safe_set_value("status", f"[ERROR] Drop failed: {e}")
-        show_toast(f"드래그앤드롭 오류: {e}", "error")
+        show_toast(f"drag and drop error: {e}", "error")
 
 
 def on_file_selected(state: AppState, app_data):
@@ -341,7 +343,7 @@ def on_file_selected(state: AppState, app_data):
             app_data["file_path_name"] if isinstance(app_data, dict) else app_data
         )
         if not str(file_path).lower().endswith(".csv"):
-            raise ValueError("CSV 파일만 지원합니다. .csv 파일을 선택하세요.")
+            raise ValueError("Only CSV files are supported. Please select a .csv file.")
         load_csv(state, file_path)
         _safe_set_value("status", f"[OK] Loaded: {Path(file_path).name}")
         _safe_set_value("row_count", f"{len(state.df):,}")
@@ -371,7 +373,7 @@ def on_file_selected(state: AppState, app_data):
         set_progress(0.8)
         auto_ratio(state)
         apply_layout(state)
-        end_busy(f"[OK] CSV 로드 완료: {Path(file_path).name}", ok=True)
+        end_busy(f"[OK] CSV 로드 completed: {Path(file_path).name}", ok=True)
     except Exception as e:
         _safe_set_value("status", f"[ERROR] {str(e)}")
         end_busy(f"[ERROR] 로드 실패: {str(e)}", ok=False)
@@ -453,9 +455,9 @@ def on_generate_plot(state: AppState):
     begin_busy(f"Generating: {plot_type} / {column}")
     try:
         plot_generic(state.df, column, plot_type, "hist_tex", TAG_PLOT_CANVAS)
-        end_busy("[OK] 시각화 완료", ok=True)
+        end_busy("[OK] Visualization 완료", ok=True)
     except Exception as e:
-        end_busy(f"[ERROR] 시각화: {str(e)}", ok=False)
+        end_busy(f"[ERROR] Visualization: {str(e)}", ok=False)
 
 
 def on_generate_advanced_plot(state: AppState):
@@ -492,7 +494,8 @@ def on_generate_advanced_plot(state: AppState):
             numeric_cols = state.df.select_dtypes(include=[np.number]).columns.tolist()
             if len(numeric_cols) < 2:
                 show_toast(
-                    "상관관계 매트릭스에는 최소 2개의 수치형 컬럼이 필요합니다.", "warn"
+                    "Correlation 매트릭스에는 최소 2개의 수치형 컬럼이 필요합니다.",
+                    "warn",
                 )
                 return
             plot_pair_correlation(
@@ -501,7 +504,8 @@ def on_generate_advanced_plot(state: AppState):
         elif plot_type == "Time Series":
             if not column2:
                 show_toast(
-                    "시계열 분석에는 날짜/시간 컬럼과 값 컬럼이 필요합니다.", "warn"
+                    "time series analysis에는 날짜/시간 컬럼과 값 컬럼이 필요합니다.",
+                    "warn",
                 )
                 return
             plot_time_series_decomposition(
@@ -510,9 +514,9 @@ def on_generate_advanced_plot(state: AppState):
         elif plot_type == "Enhanced Categorical":
             plot_advanced_categorical(state.df, column1, "advanced_plot_canvas")
 
-        end_busy("[OK] 고급 시각화 완료", ok=True)
+        end_busy("[OK] 고급 Visualization 완료", ok=True)
     except Exception as e:
-        end_busy(f"[ERROR] 고급 시각화: {str(e)}", ok=False)
+        end_busy(f"[ERROR] 고급 Visualization: {str(e)}", ok=False)
 
 
 def on_apply_filter(state: AppState):
@@ -538,7 +542,7 @@ def on_apply_filter(state: AppState):
                 float(val)
             except Exception:
                 raise ValueError(
-                    "숫자 비교 조건에는 숫자 값을 입력하세요. (예: 10, 3.14)"
+                    "숫자 비교 조건에는 숫자 값을 입력하세요. (example: 10, 3.14)"
                 )
         apply_filter(state, col, cond, val)
         update_preview_table(state)
@@ -559,7 +563,7 @@ def on_reset_filters(state: AppState):
     update_preview_table(state)
     _safe_set_value("filter_value", "")
     _safe_set_value("status", "Filters reset")
-    show_toast("필터 초기화", "info")
+    show_toast("필터 seconds기화", "info")
 
 
 def on_change_page(state: AppState, delta: int):

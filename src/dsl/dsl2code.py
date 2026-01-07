@@ -12,9 +12,9 @@ token_code_map = {
     "C8": "df.corr()",
     "C9": "df.columns",
     "C10": "df.memory_usage()",
-    "C11": "(df.isnull().sum() / len(df) * 100).round(2)",  # 결측치 Ratio(%)
-    "C12": "import seaborn as sns; import matplotlib.pyplot as plt; sns.heatmap(df.corr(), annot=True); plt.show()",  # 상관관계 히트맵
-    "C13": "print(df[df.columns[0]].value_counts())",  # 첫 번째 Column Value별 Count
+    "C11": "(df.isnull().sum() / len(df) * 100).round(2)",  # missing value ratio (%)
+    "C12": "import seaborn as sns; import matplotlib.pyplot as plt; sns.heatmap(df.corr(), annot=True); plt.show()",  # Correlation 히트맵
+    "C13": "print(df[df.columns[0]].value_counts())",  # count by value of first column
     "C14": "df.describe(include='all')",
     "C15": "df.shape",
     "C16": "df.duplicated().sum()",
@@ -22,8 +22,8 @@ token_code_map = {
     "C18": "{col: df[col].unique() for col in df.columns}",
     "C19": "df.T",
     "C20": "df.index",
-    "C21": "df[df.isnull().any(axis=1)]",  # 결측치가 있는 Row
-    "C22": "{col: df[col].mode().tolist() for col in df.columns}",  # 각 Column별 최빈Value
+    "C21": "df[df.isnull().any(axis=1)]",  # rows with missing values
+    "C22": "{col: df[col].mode().tolist() for col in df.columns}",  # mode value for each column
     "C23": "import matplotlib.pyplot as plt; df.select_dtypes(include='number').hist(figsize=(10,8)); plt.show()",  # 수치형 히스토그램
     "C24": "[df[col].value_counts().head() for col in df.select_dtypes(include='object').columns]",  # 상위 5개 범주형 Column Value별 Count
     "C25": "df.corr().unstack().sort_values(ascending=False)[len(df.columns):len(df.columns)+5]",  # 상관계수 상위 5개
@@ -91,7 +91,7 @@ def dsl_to_code(dsl_sequence, csv_path="your_file.csv"):
             "# Data 로딩",
             f"print(' 데이터 로딩: {csv_path}')",
             f"df = pd.read_csv({repr(csv_path)})",
-            f"print(f' 데이터 로드 완료: {{len(df):,}}행 × {{len(df.columns)}}열')",
+            f"print(f' 데이터 로드 completed: {{len(df):,}}행 × {{len(df.columns)}}열')",
             "",
         ]
     )
@@ -141,11 +141,11 @@ def _get_token_description(token):
         "C5": "고유값 개수",
         "C6": "상위 5행",
         "C7": "하위 5행",
-        "C8": "상관관계 행렬",
+        "C8": "Correlation 행렬",
         "C9": "컬럼 목록",
         "C10": "메모리 사용량",
         "C11": "결측치 비율",
-        "C12": "상관관계 히트맵",
+        "C12": "Correlation 히트맵",
         "C13": "첫 번째 컬럼 값 분포",
         "C14": "전체 기술통계",
         "C15": "데이터 크기",
@@ -180,7 +180,7 @@ def _get_token_description(token):
         "C44": "수치형 최빈값",
         "C45": "고유값 비율",
         "C46": "컬럼별 중복값",
-        "C47": "박스플롯 시각화",
+        "C47": "박스플롯 Visualization",
         "C48": "결측치 컬럼 목록",
         "C49": "교차표 분석",
         "C50": "조합 분석",

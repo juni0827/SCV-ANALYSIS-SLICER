@@ -72,7 +72,7 @@ def load_csv_optimized(
             ):
                 chunks.append(chunk)
                 # Monitor memory usage
-                if len(chunks) * chunk_size > 1000000:  # 100만 Row 이상
+                if len(chunks) * chunk_size > 1000000:  # over 1 million rows
                     break
             df = pd.concat(chunks, ignore_index=True)
         else:
